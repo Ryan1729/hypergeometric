@@ -1,0 +1,80 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <title>Hypergeometric</title><style type="text/css">body{
+margin:40px auto;
+max-width:650px;
+line-height:1.6;
+font-size:18px;
+color:#eee;
+background-color:#111;
+padding:0 10px
+}
+textarea, input, button {
+color:#eee;
+background-color:#111;
+}
+button:hover {
+  background-color:#222;
+}
+</style>
+  <script type="text/javascript" src="vis-graph3d.min.js"></script>
+
+  <script type="text/javascript">
+    var data = null;
+    var graph = null;
+
+    // Called when the Visualization API is loaded.
+    function drawVisualization() {
+      // Create and populate a data table.
+      data = new vis.DataSet();
+      // Use some fixed hypergeomtric distribution data to start us off
+      const DATA = [
+        0.021615,
+        0.121041,
+        0.269415,
+        0.308704,
+        0.196448,
+        0.069335,
+        0.012546,
+        0.000896
+      ];
+      var counter = 0;
+      var axisMax = DATA.length;
+      var axisStep = 1;
+      for (var x = 0; x < axisMax; x+=axisStep) {
+        for (var y = 0; y < axisMax; y+=axisStep) {
+          var height = DATA[y];
+          var value = DATA[x];
+          data.add({id:counter++,x:x,y:y,z:height,style:value});
+        }
+      }
+
+      // specify options
+      var options = {
+        width:  '600px',
+        height: '600px',
+        style: 'surface',
+        showPerspective: true,
+        showGrid: true,
+        showShadow: false,
+        keepAspectRatio: true,
+        verticalRatio: 0.5
+      };
+
+      // Instantiate our graph object.
+      var container = document.getElementById('mygraph');
+      graph = new vis.Graph3d(container, data, options);
+    }
+  </script>
+  
+</head>
+
+<body onload="drawVisualization();">
+<div id="mygraph"></div>
+
+</body>
+</html>
