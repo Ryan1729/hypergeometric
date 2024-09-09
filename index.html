@@ -22,6 +22,7 @@ button:hover {
 }
 </style>
   <script type="text/javascript" src="vis-graph3d.min.js"></script>
+  <script type="text/javascript" src="hypergeometric.js"></script>
 
   <script type="text/javascript">
     var data = null;
@@ -31,38 +32,33 @@ button:hover {
     function drawVisualization() {
       // Create and populate a data table.
       data = new vis.DataSet();
-      // Use some fixed hypergeomtric distribution data to start us off
-      const DATA = [
-        0.021615,
-        0.121041,
-        0.269415,
-        0.308704,
-        0.196448,
-        0.069335,
-        0.012546,
-        0.000896
-      ];
+
       var counter = 0;
-      var axisMax = DATA.length;
       var axisStep = 1;
-      for (var x = 0; x < axisMax; x+=axisStep) {
-        for (var y = 0; y < axisMax; y+=axisStep) {
-          var height = DATA[y];
-          var value = DATA[x];
+
+      const xMax = 60;
+      const yMax = 7;
+
+      for (var x = 0; x <= xMax; x+=axisStep) {
+        for (var y = 0; y <= yMax; y+=axisStep) {
+          const height = Hypergeometric.pmf(xMax, x, yMax, y);
+          const value = y/yMax;
           data.add({id:counter++,x:x,y:y,z:height,style:value});
         }
       }
 
       // specify options
       var options = {
-        width:  '600px',
-        height: '600px',
+        width:  '1024px',
+        height: '768px',
         style: 'surface',
         showPerspective: true,
         showGrid: true,
         showShadow: false,
         keepAspectRatio: true,
-        verticalRatio: 0.5
+        verticalRatio: 0.5,
+        xLabel: "success states in pop",
+        yLabel: "observed successes",
       };
 
       // Instantiate our graph object.
@@ -70,7 +66,7 @@ button:hover {
       graph = new vis.Graph3d(container, data, options);
     }
   </script>
-  
+
 </head>
 
 <body onload="drawVisualization();">
