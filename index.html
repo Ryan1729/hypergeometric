@@ -23,29 +23,42 @@ button:hover {
 </style>
   <script type="text/javascript" src="vis-graph3d.min.js"></script>
   <script type="text/javascript" src="hypergeometric.js"></script>
+</head>
 
-  <script type="text/javascript">
-    var data = null;
-    var graph = null;
+<body>
+  <div id="root"></div>
+</body>
 
-    // Called when the Visualization API is loaded.
-    function drawVisualization() {
-      // Create and populate a data table.
-      data = new vis.DataSet();
+<script type="text/javascript">
+  let root = null;
 
-      var counter = 0;
-      var axisStep = 1;
+  const tempGlobal = {
+    data: null,
+    graph: null,
+  };
+  const renderGraph = ({rows, yMax}) => {
+    //
+    // Render graph
+    //
 
-      const xMax = 60;
-      const yMax = 7;
+    // Create and populate a data table.
+    const data = new vis.DataSet();
 
-      for (var x = 0; x <= xMax; x+=axisStep) {
-        for (var y = 0; y <= yMax; y+=axisStep) {
-          const height = Hypergeometric.pmf(xMax, x, yMax, y);
-          const value = y/yMax;
-          data.add({id:counter++,x:x,y:y,z:height,style:value});
-        }
-      }
+    var counter = 0;
+    for (var i = 0; i < rows.length; i+=1) {
+      const {successesInPop, observedSuccesses, probability} = rows[i];
+      const value = observedSuccesses/yMax;
+      data.add({
+        id: counter++,
+        x: successesInPop,
+        y: observedSuccesses,
+        z: probability,
+        style: value,
+      });
+    }
+
+    if (!tempGlobal.data) {
+      tempGlobal.data = data;
 
       // specify options
       var options = {
@@ -62,15 +75,80 @@ button:hover {
       };
 
       // Instantiate our graph object.
-      var container = document.getElementById('mygraph');
-      graph = new vis.Graph3d(container, data, options);
+      const container = document.createElement('div');
+      root.appendChild(container);
+      tempGlobal.graph = new vis.Graph3d(container, tempGlobal.data, options);
+    } else {
+      tempGlobal.data = data;
+      tempGlobal.graph.setData(tempGlobal.data);
     }
-  </script>
 
-</head>
+    //
+    // Render table
+    //
 
-<body onload="drawVisualization();">
-<div id="mygraph"></div>
+    const container = document.createElement('div');
 
-</body>
+    const entryTable = document.createElement("table");
+
+    const headerRow = document.createElement("tr");
+
+    const successesInPopH = document.createElement("th");
+    successesInPopH.textContent = "successesInPop";
+    headerRow.appendChild(successesInPopH);
+
+    const observedSuccessesH = document.createElement("th");
+    observedSuccessesH.textContent = "observedSuccesses";
+    headerRow.appendChild(observedSuccessesH);
+
+    const probabilityH = document.createElement("th");
+    probabilityH.textContent = "probability";
+    headerRow.appendChild(probabilityH);
+
+    entryTable.appendChild(headerRow);
+
+    for (let i = 0; i < rows.length; i += 1) {
+        const {successesInPop, observedSuccesses, probability} = rows[i];
+        const dataRow = document.createElement("tr");
+
+        const successesInPopD = document.createElement("td");
+        successesInPopD.textContent = successesInPop;
+        dataRow.appendChild(successesInPopD);
+
+        const observedSuccessesD = document.createElement("td");
+        observedSuccessesD.textContent = observedSuccesses;
+        dataRow.appendChild(observedSuccessesD);
+
+        const probabilityD = document.createElement("td");
+        const pString = probability.toFixed(8);
+        probabilityD.textContent = probability === 0 ? "0" : pString === "0.00000000" ? "0.000000+ε" : pString;
+        dataRow.appendChild(probabilityD);
+
+        entryTable.appendChild(dataRow);
+    }
+
+    container.appendChild(entryTable);
+
+    root.appendChild(container);
+  };
+
+  root = document.getElementById("root");
+
+  var axisStep = 1;
+
+  const popMax = 60;
+  const draws = 7;
+
+  const rows = [];
+
+  for (var successesInPop = 0; successesInPop <= popMax; successesInPop += axisStep) {
+    for (var observedSuccesses = 0; observedSuccesses <= draws; observedSuccesses += axisStep) {
+      const probability = Hypergeometric.pmf(popMax, successesInPop, draws, observedSuccesses);
+      rows.push({successesInPop, observedSuccesses, probability});
+    }
+  }
+
+  renderGraph({rows, yMax: draws});
+</script>
+
 </html>
