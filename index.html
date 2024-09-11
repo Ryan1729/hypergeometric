@@ -20,6 +20,10 @@ background-color:#111;
 button:hover {
   background-color:#222;
 }
+label {
+  margin-left: 0.5em;
+  margin-right: 1em;
+}
 </style>
   <script type="text/javascript" src="vis-graph3d.min.js"></script>
   <script type="text/javascript" src="hypergeometric.js"></script>
@@ -30,13 +34,16 @@ button:hover {
 </body>
 
 <script type="text/javascript">
-  let root = null;
+  const root = document.getElementById("root");
 
   const tempGlobal = {
+    // graph stuff
     data: null,
     graph: null,
+    // table stuff
+    tableContainer: null
   };
-  const renderGraph = ({rows, yMax}) => {
+  const renderRows = ({rows, yMax}) => {
     //
     // Render graph
     //
@@ -54,6 +61,16 @@ button:hover {
         y: observedSuccesses,
         z: probability,
         style: value,
+      });
+    }
+    // avoid "Graph data is not initialized" errors
+    if (!rows.length) {
+      data.add({
+        id: counter++,
+        x: 0,
+        y: 0,
+        z: 0,
+        style: 0,
       });
     }
 
@@ -87,7 +104,13 @@ button:hover {
     // Render table
     //
 
-    const container = document.createElement('div');
+    if (!tempGlobal.tableContainer) {
+      tempGlobal.tableContainer = document.createElement('div');
+
+      root.appendChild(tempGlobal.tableContainer);
+    } else {
+      tempGlobal.tableContainer.innerHTML = "";
+    }
 
     const entryTable = document.createElement("table");
 
@@ -127,28 +150,65 @@ button:hover {
         entryTable.appendChild(dataRow);
     }
 
-    container.appendChild(entryTable);
-
-    root.appendChild(container);
+    tempGlobal.tableContainer.appendChild(entryTable);
   };
 
-  root = document.getElementById("root");
+  const controls = document.createElement("form");
 
-  var axisStep = 1;
+  const POPULATION_DEFAULT = 60;
+  const populationInput = document.createElement("input");
+  populationInput.type = "number";
+  populationInput.id = "population-input";
+  populationInput.value = POPULATION_DEFAULT;
+  controls.appendChild(populationInput);
 
-  const popMax = 60;
-  const draws = 7;
+  const populationLabel = document.createElement("label");
+  populationLabel.htmlFor = "population-input";
+  populationLabel.innerHTML = "Population";
+  controls.appendChild(populationLabel);
 
-  const rows = [];
+  const DRAWS_DEFAULT = 7;
+  const drawsInput = document.createElement("input");
+  drawsInput.type = "number";
+  drawsInput.id = "draws-input";
+  drawsInput.value = DRAWS_DEFAULT;
+  controls.appendChild(drawsInput);
 
-  for (var successesInPop = 0; successesInPop <= popMax; successesInPop += axisStep) {
-    for (var observedSuccesses = 0; observedSuccesses <= draws; observedSuccesses += axisStep) {
-      const probability = Hypergeometric.pmf(popMax, successesInPop, draws, observedSuccesses);
-      rows.push({successesInPop, observedSuccesses, probability});
+  const drawsLabel = document.createElement("label");
+  drawsLabel.htmlFor = "draws-input";
+  drawsLabel.innerHTML = "Draws";
+  controls.appendChild(drawsLabel);
+
+  const render = () => {
+    var axisStep = 1;
+
+    let popMax = parseInt(populationInput.value, 10);
+    if (isNaN(popMax)) {
+      popMax = POPULATION_DEFAULT;
     }
-  }
 
-  renderGraph({rows, yMax: draws});
+    let draws = parseInt(drawsInput.value, 10);
+    if (isNaN(draws)) {
+      draws = DRAWS_DEFAULT;
+    }
+
+    const rows = [];
+
+    for (var successesInPop = 0; successesInPop <= popMax; successesInPop += axisStep) {
+      for (var observedSuccesses = 0; observedSuccesses <= draws; observedSuccesses += axisStep) {
+        const probability = Hypergeometric.pmf(popMax, successesInPop, draws, observedSuccesses);
+        rows.push({successesInPop, observedSuccesses, probability});
+      }
+    }
+
+    renderRows({rows, yMax: draws});
+  };
+
+  controls.addEventListener("change", render);
+
+  root.appendChild(controls);
+
+  render();
 </script>
 
 </html>
