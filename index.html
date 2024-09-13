@@ -13,7 +13,7 @@ color:#eee;
 background-color:#111;
 padding:0 10px
 }
-textarea, input, button {
+textarea, input, button, select {
 color:#eee;
 background-color:#111;
 }
@@ -34,6 +34,8 @@ label {
 </body>
 
 <script type="text/javascript">
+  const STYLES = ['surface', 'bar', /*'bar-color',*/ 'bar-size', 'dot', 'dot-line', /*'dot-color',*/ 'dot-size', 'line', 'grid'];
+
   const root = document.getElementById("root");
 
   const tempGlobal = {
@@ -67,7 +69,7 @@ label {
         : pString === PROB_ZERO ? PROB_ZERO_PLUS_EPILISON : pString;
   };
 
-  const renderRows = ({rows, yMax}) => {
+  const renderRows = ({rows, yMax, options}) => {
     //
     // Render graph
     //
@@ -101,27 +103,32 @@ label {
     if (!tempGlobal.data) {
       tempGlobal.data = data;
 
-      // specify options
-      var options = {
-        width:  '1024px',
-        height: '768px',
-        style: 'surface',
-        showPerspective: true,
-        showGrid: true,
-        showShadow: false,
-        keepAspectRatio: true,
-        verticalRatio: 0.5,
-        xLabel: "success states in pop",
-        yLabel: "observed successes",
-      };
-
       // Instantiate our graph object.
       const container = document.createElement('div');
       root.appendChild(container);
-      tempGlobal.graph = new vis.Graph3d(container, tempGlobal.data, options);
+      tempGlobal.graph = new vis.Graph3d(
+        container,
+        tempGlobal.data,
+        {
+          width:  '1024px',
+          height: '768px',
+          style: 'surface',
+          showPerspective: true,
+          showGrid: true,
+          showShadow: false,
+          keepAspectRatio: true,
+          verticalRatio: 0.5,
+          xLabel: "success states in pop",
+          yLabel: "observed successes",
+        }
+      );
     } else {
       tempGlobal.data = data;
       tempGlobal.graph.setData(tempGlobal.data);
+    }
+
+    if (options) {
+      tempGlobal.graph.setOptions(options);
     }
 
     //
@@ -281,6 +288,16 @@ label {
   drawsLabel.innerHTML = "Draws";
   controls.appendChild(drawsLabel);
 
+  const styleSelect = document.createElement("select");
+  for (let i = 0; i < STYLES.length; i += 1) {
+    const option = document.createElement("option")
+    option.value = STYLES[i];
+    option.textContent = STYLES[i];
+    option.selected = i === 0;
+    styleSelect.appendChild(option);
+  }
+  controls.appendChild(styleSelect);
+
   const render = () => {
     var axisStep = 1;
 
@@ -305,7 +322,7 @@ label {
       }
     }
 
-    renderRows({rows, yMax: draws});
+    renderRows({rows, yMax: draws, options: {style: styleSelect.value || STYLES[0]}});
   };
 
   controls.addEventListener("change", render);
