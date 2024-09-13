@@ -43,6 +43,30 @@ label {
     // table stuff
     tableContainer: null
   };
+
+  /** @type {(s: string, n: number) => string} */
+  const repeatString = (s, n) => {
+    let output = "";
+
+    for (let i = 0; i < n; i += 1) {
+      output += s;
+    }
+
+    return output
+  }
+
+  const PROB_ZERO = "0." + repeatString("0", Hypergeometric.PMF_DIGITS);
+  const PROB_ZERO_PLUS_EPILISON = "0." + repeatString("0", Hypergeometric.PMF_DIGITS - 2) + "+ε";
+  const PROB_ROUND_TO_1_THRESHOLD = parseFloat("0." + repeatString("9", Hypergeometric.PMF_DIGITS - 1) + "5");
+  const probabiltyToString = (probability) => {
+    const pString = probability.toFixed(Hypergeometric.PMF_DIGITS);
+    return probability === 0
+      ? "0"
+      : probability > PROB_ROUND_TO_1_THRESHOLD
+        ? "1"
+        : pString === PROB_ZERO ? PROB_ZERO_PLUS_EPILISON : pString;
+  };
+
   const renderRows = ({rows, yMax}) => {
     //
     // Render graph
@@ -101,7 +125,7 @@ label {
     }
 
     //
-    // Render table
+    // Render tables
     //
 
     if (!tempGlobal.tableContainer) {
@@ -112,45 +136,123 @@ label {
       tempGlobal.tableContainer.innerHTML = "";
     }
 
-    const entryTable = document.createElement("table");
+    // Render individual probabilty table
+    (() => {
+      const individualDetails = document.createElement("details");
 
-    const headerRow = document.createElement("tr");
+      const individualSummary = document.createElement("summary");
+      individualSummary.textContent = "individual probabilty table";
+      individualDetails.appendChild(individualSummary);
 
-    const successesInPopH = document.createElement("th");
-    successesInPopH.textContent = "successesInPop";
-    headerRow.appendChild(successesInPopH);
+      const individualTable = document.createElement("table");
 
-    const observedSuccessesH = document.createElement("th");
-    observedSuccessesH.textContent = "observedSuccesses";
-    headerRow.appendChild(observedSuccessesH);
+      const headerRow = document.createElement("tr");
 
-    const probabilityH = document.createElement("th");
-    probabilityH.textContent = "probability";
-    headerRow.appendChild(probabilityH);
+      const successesInPopH = document.createElement("th");
+      successesInPopH.textContent = "successesInPop";
+      headerRow.appendChild(successesInPopH);
 
-    entryTable.appendChild(headerRow);
+      const observedSuccessesH = document.createElement("th");
+      observedSuccessesH.textContent = "observedSuccesses";
+      headerRow.appendChild(observedSuccessesH);
 
-    for (let i = 0; i < rows.length; i += 1) {
+      const probabilityH = document.createElement("th");
+      probabilityH.textContent = "probability";
+      headerRow.appendChild(probabilityH);
+
+      individualTable.appendChild(headerRow);
+
+      for (let i = 0; i < rows.length; i += 1) {
+          const {successesInPop, observedSuccesses, probability} = rows[i];
+          const dataRow = document.createElement("tr");
+
+          const successesInPopD = document.createElement("td");
+          successesInPopD.textContent = successesInPop;
+          dataRow.appendChild(successesInPopD);
+
+          const observedSuccessesD = document.createElement("td");
+          observedSuccessesD.textContent = observedSuccesses;
+          dataRow.appendChild(observedSuccessesD);
+
+          const probabilityD = document.createElement("td");
+          probabilityD.textContent = probabiltyToString(probability);
+          dataRow.appendChild(probabilityD);
+
+          individualTable.appendChild(dataRow);
+      }
+
+      individualDetails.appendChild(individualTable);
+
+      tempGlobal.tableContainer.appendChild(individualDetails);
+    })();
+
+    // Render "at-least" probabilty table
+    (() => {
+      const atLeastDetails = document.createElement("details");
+
+      const atLeastSummary = document.createElement("summary");
+      atLeastSummary.textContent = "at-least probabilty table";
+      atLeastDetails.appendChild(atLeastSummary);
+
+      const atLeastTable = document.createElement("table");
+
+      const headerRow = document.createElement("tr");
+
+      const successesInPopH = document.createElement("th");
+      successesInPopH.textContent = "successesInPop";
+      headerRow.appendChild(successesInPopH);
+
+      const observedSuccessesH = document.createElement("th");
+      observedSuccessesH.textContent = "observedSuccesses";
+      headerRow.appendChild(observedSuccessesH);
+
+      const probabilityH = document.createElement("th");
+      probabilityH.textContent = "probability";
+      headerRow.appendChild(probabilityH);
+
+      atLeastTable.appendChild(headerRow);
+
+      const atLeastRows = []
+      for (let i = 0; i < rows.length; i += 1) {
         const {successesInPop, observedSuccesses, probability} = rows[i];
-        const dataRow = document.createElement("tr");
+        let probabilitySum = 0;
+        // TODO something better than O(n^2) if/when we care
+        for (let prevI = 0; prevI < rows.length; prevI += 1) {
+          const other = rows[prevI];
+          if (
+            other.successesInPop === successesInPop
+            && other.observedSuccesses >= observedSuccesses
+          ) {
+            probabilitySum += other.probability;
+          }
+        }
 
-        const successesInPopD = document.createElement("td");
-        successesInPopD.textContent = successesInPop;
-        dataRow.appendChild(successesInPopD);
+        atLeastRows.push({successesInPop, observedSuccesses, probability: probabilitySum});
+      }
 
-        const observedSuccessesD = document.createElement("td");
-        observedSuccessesD.textContent = observedSuccesses;
-        dataRow.appendChild(observedSuccessesD);
+      for (let i = 0; i < atLeastRows.length; i += 1) {
+          const {successesInPop, observedSuccesses, probability} = atLeastRows[i];
+          const dataRow = document.createElement("tr");
 
-        const probabilityD = document.createElement("td");
-        const pString = probability.toFixed(8);
-        probabilityD.textContent = probability === 0 ? "0" : pString === "0.00000000" ? "0.000000+ε" : pString;
-        dataRow.appendChild(probabilityD);
+          const successesInPopD = document.createElement("td");
+          successesInPopD.textContent = successesInPop;
+          dataRow.appendChild(successesInPopD);
 
-        entryTable.appendChild(dataRow);
-    }
+          const observedSuccessesD = document.createElement("td");
+          observedSuccessesD.textContent = observedSuccesses;
+          dataRow.appendChild(observedSuccessesD);
 
-    tempGlobal.tableContainer.appendChild(entryTable);
+          const probabilityD = document.createElement("td");
+          probabilityD.textContent = probabiltyToString(probability);
+          dataRow.appendChild(probabilityD);
+
+          atLeastTable.appendChild(dataRow);
+      }
+
+      atLeastDetails.appendChild(atLeastTable);
+
+      tempGlobal.tableContainer.appendChild(atLeastDetails);
+    })();
   };
 
   const controls = document.createElement("form");
@@ -196,6 +298,8 @@ label {
 
     for (var successesInPop = 0; successesInPop <= popMax; successesInPop += axisStep) {
       for (var observedSuccesses = 0; observedSuccesses <= draws; observedSuccesses += axisStep) {
+        if (observedSuccesses > popMax || observedSuccesses > successesInPop) { continue }
+
         const probability = Hypergeometric.pmf(popMax, successesInPop, draws, observedSuccesses);
         rows.push({successesInPop, observedSuccesses, probability});
       }

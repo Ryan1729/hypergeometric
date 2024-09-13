@@ -3,6 +3,11 @@ var Hypergeometric = (function () {
 
     /** @typedef {number} Integer */
 
+    const PMF_DIGITS = 5;
+    const PMF_SCALE_DOWN = Math.pow(10, PMF_DIGITS);
+    const PMF_SCALE_UP = BigInt(PMF_SCALE_DOWN);
+
+
     /** @type {(n: Integer) => Bigint} */
     const factorial = (n) => {
         let output = 1n;
@@ -27,10 +32,11 @@ var Hypergeometric = (function () {
     const pmf = (N, K, n, k) => {
         if (k > N || k > K) { return 0 }
 
-        return Number(10000n * (choose(K, k) * choose(N - K, n - k)) / choose(N, n)) / 10000;
+        return Number(PMF_SCALE_UP * (choose(K, k) * choose(N - K, n - k)) / choose(N, n)) / PMF_SCALE_DOWN;
     };
 
     return {
+        PMF_DIGITS,
         choose,
         factorial,
         pmf
