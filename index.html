@@ -344,6 +344,14 @@ label {
   inDeckInput.value = POPULATION_DEFAULT;
   calcControls.appendChild(inDeckInput);
 
+  const inDeckLabel = document.createElement("label");
+  inDeckLabel.htmlFor = "in-deck-input";
+  inDeckLabel.innerHTML = "In Deck";
+  calcControls.appendChild(inDeckLabel);
+
+  // TODO support more classes
+  // TODO support labelling classes with custom strings
+  // TODO? save class labels to local storage?
   const CLASS_1_DEFAULT = 24;
 
   const class1Input = document.createElement("input");
@@ -351,6 +359,11 @@ label {
   class1Input.id = "class-1-input";
   class1Input.value = CLASS_1_DEFAULT;
   calcControls.appendChild(class1Input);
+
+  const class1Label = document.createElement("label");
+  class1Label.htmlFor = "class-1-input";
+  class1Label.innerHTML = "Class 1";
+  calcControls.appendChild(class1Label);
 
   const calcOutput = document.createElement("output");
 
