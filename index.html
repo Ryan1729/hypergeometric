@@ -262,31 +262,31 @@ label {
     })();
   };
 
-  const controls = document.createElement("form");
+  const chartControls = document.createElement("form");
 
   const POPULATION_DEFAULT = 60;
   const populationInput = document.createElement("input");
   populationInput.type = "number";
   populationInput.id = "population-input";
   populationInput.value = POPULATION_DEFAULT;
-  controls.appendChild(populationInput);
+  chartControls.appendChild(populationInput);
 
   const populationLabel = document.createElement("label");
   populationLabel.htmlFor = "population-input";
   populationLabel.innerHTML = "Population";
-  controls.appendChild(populationLabel);
+  chartControls.appendChild(populationLabel);
 
   const DRAWS_DEFAULT = 7;
   const drawsInput = document.createElement("input");
   drawsInput.type = "number";
   drawsInput.id = "draws-input";
   drawsInput.value = DRAWS_DEFAULT;
-  controls.appendChild(drawsInput);
+  chartControls.appendChild(drawsInput);
 
   const drawsLabel = document.createElement("label");
   drawsLabel.htmlFor = "draws-input";
   drawsLabel.innerHTML = "Draws";
-  controls.appendChild(drawsLabel);
+  chartControls.appendChild(drawsLabel);
 
   const styleSelect = document.createElement("select");
   for (let i = 0; i < STYLES.length; i += 1) {
@@ -296,7 +296,7 @@ label {
     option.selected = i === 0;
     styleSelect.appendChild(option);
   }
-  controls.appendChild(styleSelect);
+  chartControls.appendChild(styleSelect);
 
   const render = () => {
     var axisStep = 1;
@@ -325,11 +325,57 @@ label {
     renderRows({rows, yMax: draws, options: {style: styleSelect.value || STYLES[0]}});
   };
 
-  controls.addEventListener("change", render);
+  chartControls.addEventListener("change", render);
 
-  root.appendChild(controls);
+  root.appendChild(chartControls);
 
   render();
+
+  const calcLabel = document.createElement("div");
+  calcLabel.textContent = "Single Draw calculator";
+  calcLabel.style.marginTop = "2ex";
+  root.appendChild(calcLabel);
+
+  const calcControls = document.createElement("form");
+
+  const inDeckInput = document.createElement("input");
+  inDeckInput.type = "number";
+  inDeckInput.id = "in-deck-input";
+  inDeckInput.value = POPULATION_DEFAULT;
+  calcControls.appendChild(inDeckInput);
+
+  const CLASS_1_DEFAULT = 24;
+
+  const class1Input = document.createElement("input");
+  class1Input.type = "number";
+  class1Input.id = "class-1-input";
+  class1Input.value = CLASS_1_DEFAULT;
+  calcControls.appendChild(class1Input);
+
+  const calcOutput = document.createElement("output");
+
+  const renderCalc = () => {
+    let popMax = parseInt(inDeckInput.value, 10);
+    if (isNaN(popMax)) {
+      popMax = POPULATION_DEFAULT;
+    }
+
+    let successesInPop = parseInt(class1Input.value, 10);
+    if (isNaN(successesInPop)) {
+      successesInPop = 0;
+    }
+
+    calcOutput.textContent = `${Hypergeometric.pmf(popMax, successesInPop, 1, 1)}%`;
+  };
+
+  calcControls.addEventListener("change", renderCalc);
+
+  root.appendChild(calcControls);
+  root.appendChild(calcOutput);
+
+  renderCalc();
+
+
 </script>
 
 </html>
