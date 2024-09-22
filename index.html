@@ -349,23 +349,50 @@ label {
   inDeckLabel.innerHTML = "In Deck";
   calcControls.appendChild(inDeckLabel);
 
-  // TODO support more classes
+  // TODO support dynamic amount of classes
   // TODO support labelling classes with custom strings
   // TODO? save class labels to local storage?
-  const CLASS_1_DEFAULT = 24;
 
-  const class1Input = document.createElement("input");
-  class1Input.type = "number";
-  class1Input.id = "class-1-input";
-  class1Input.value = CLASS_1_DEFAULT;
-  calcControls.appendChild(class1Input);
+  const CLASS_DEFAULTS = [24, 12, 12];
+  const labels = ["Class 1", "Class 2", "Class 3"];
 
-  const class1Label = document.createElement("label");
-  class1Label.htmlFor = "class-1-input";
-  class1Label.innerHTML = "Class 1";
-  calcControls.appendChild(class1Label);
+  let classElements = [];
 
-  const calcOutput = document.createElement("output");
+  for (let i = 0; i < labels.length; i += 1) {
+    const label = labels[i];
+    const wrapper = document.createElement("div");
+
+    const id = i + "-input";
+
+    const input = document.createElement("input");
+    input.type = "number";
+    input.id = id;
+    input.value = CLASS_DEFAULTS[i];
+    wrapper.appendChild(input);
+
+    classElements.push(input);
+
+    const labelElement = document.createElement("label");
+    labelElement.htmlFor = id;
+    labelElement.innerHTML = label;
+    wrapper.appendChild(labelElement);
+
+    calcControls.appendChild(wrapper);
+
+    const drew = document.createElement("button");
+    drew.textContent = "drew " + label;
+    calcControls.appendChild(drew);
+    drew.addEventListener("click", (e) => {
+      e.preventDefault();
+      input.value -= 1;
+
+      inDeckInput.value -= 1;
+
+      renderCalc()
+    });
+  }
+
+  const calcOutput = document.createElement("pre");
 
   const renderCalc = () => {
     let popMax = parseInt(inDeckInput.value, 10);
@@ -373,18 +400,40 @@ label {
       popMax = POPULATION_DEFAULT;
     }
 
-    let successesInPop = parseInt(class1Input.value, 10);
-    if (isNaN(successesInPop)) {
-      successesInPop = 0;
-    }
+    calcOutput.textContent = "";
 
-    calcOutput.textContent = `${Hypergeometric.pmf(popMax, successesInPop, 1, 1)}%`;
+    for (let i = 0; i < labels.length; i += 1) {
+      const elem = classElements[i];
+
+      let successesInPop = parseInt(elem.value, 10);
+      if (isNaN(successesInPop)) {
+        successesInPop = 0;
+      }
+
+      calcOutput.textContent += `${labels[i]}: ${Hypergeometric.pmf(popMax, successesInPop, 1, 1) * 100}%\n`;
+    }
   };
 
   calcControls.addEventListener("change", renderCalc);
 
   root.appendChild(calcControls);
   root.appendChild(calcOutput);
+
+  const calcReset = document.createElement("button");
+  calcReset.textContent = "Reset to defaults";
+  calcReset.style.display = "block";
+  calcReset.addEventListener("click", (e) => {
+    inDeckInput.value = POPULATION_DEFAULT;
+
+    for (let i = 0; i < labels.length; i += 1) {
+      const elem = classElements[i];
+
+      elem.value = CLASS_DEFAULTS[i];
+    }
+
+    renderCalc();
+  });
+  root.appendChild(calcReset);
 
   renderCalc();
 
