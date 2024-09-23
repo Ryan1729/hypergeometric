@@ -338,6 +338,15 @@ label {
 
   const calcControls = document.createElement("form");
 
+  const presetControls = document.createElement("div");
+  presetControls.style.border = "solid #888";
+
+  const presetHeading = document.createElement("label");
+  presetHeading.textContent = "Preset Controls"
+  presetControls.appendChild(presetHeading);
+
+  calcControls.appendChild(presetControls);
+
   const inDeckInput = document.createElement("input");
   inDeckInput.type = "number";
   inDeckInput.id = "in-deck-input";
@@ -349,9 +358,23 @@ label {
   inDeckLabel.innerHTML = "In Deck";
   calcControls.appendChild(inDeckLabel);
 
+  const inDeckDefaultWrapper = document.createElement("div");
+
+  const inDeckDefaultInput = document.createElement("input");
+  inDeckDefaultInput.type = "number";
+  inDeckDefaultInput.id = "in-deck-default-input";
+  inDeckDefaultInput.value = POPULATION_DEFAULT;
+  inDeckDefaultWrapper.appendChild(inDeckDefaultInput);
+
+  const inDeckDefaultLabel = document.createElement("label");
+  inDeckDefaultLabel.htmlFor = "in-deck-default-input";
+  inDeckDefaultLabel.textContent = "Default for In Deck";
+  inDeckDefaultWrapper.appendChild(inDeckDefaultLabel);
+
+  presetControls.appendChild(inDeckDefaultWrapper);
+
   // TODO support dynamic amount of classes
-  // TODO support labelling classes with custom strings
-  // TODO? save class labels to local storage?
+  // TODO? save class labels and defaults to local storage?
 
   const CLASS_DEFAULTS = [24, 12, 12];
   const labels = ["Class 1", "Class 2", "Class 3"];
@@ -359,7 +382,6 @@ label {
   let classElements = [];
 
   for (let i = 0; i < labels.length; i += 1) {
-    const label = labels[i];
     const wrapper = document.createElement("div");
 
     const id = i + "-input";
@@ -370,17 +392,43 @@ label {
     input.value = CLASS_DEFAULTS[i];
     wrapper.appendChild(input);
 
-    classElements.push(input);
+    const labelElement = document.createElement("input");
 
-    const labelElement = document.createElement("label");
-    labelElement.htmlFor = id;
-    labelElement.innerHTML = label;
     wrapper.appendChild(labelElement);
 
     calcControls.appendChild(wrapper);
 
     const drew = document.createElement("button");
-    drew.textContent = "drew " + label;
+
+    const defaultWrapper = document.createElement("div");
+
+    const defaultId = i + "-default-input";
+
+    const defaultInput = document.createElement("input");
+    defaultInput.type = "number";
+    defaultInput.id = defaultId;
+    defaultInput.value = CLASS_DEFAULTS[i];
+    defaultWrapper.appendChild(defaultInput);
+
+    const defaultLabel = document.createElement("label");
+    defaultLabel.htmlFor = defaultId;
+    defaultLabel.textContent = defaultId;
+    defaultWrapper.appendChild(defaultLabel);
+
+    presetControls.appendChild(defaultWrapper);
+
+    const setLabel = (label) => {
+      labelElement.value = label;
+      drew.textContent = "drew " + label;
+      defaultLabel.textContent = "Default for " + label;
+    };
+
+    setLabel(labels[i]);
+    labelElement.addEventListener("input", (e) => {
+      setLabel(labelElement.value);
+      renderCalc();
+    });
+
     calcControls.appendChild(drew);
     drew.addEventListener("click", (e) => {
       e.preventDefault();
@@ -390,6 +438,8 @@ label {
 
       renderCalc()
     });
+
+    classElements.push({input, label: labelElement, defaultInput, defaultLabel});
   }
 
   const calcOutput = document.createElement("pre");
@@ -403,14 +453,14 @@ label {
     calcOutput.textContent = "";
 
     for (let i = 0; i < labels.length; i += 1) {
-      const elem = classElements[i];
+      const {input, label} = classElements[i];
 
-      let successesInPop = parseInt(elem.value, 10);
+      let successesInPop = parseInt(input.value, 10);
       if (isNaN(successesInPop)) {
         successesInPop = 0;
       }
 
-      calcOutput.textContent += `${labels[i]}: ${Hypergeometric.pmf(popMax, successesInPop, 1, 1) * 100}%\n`;
+      calcOutput.textContent += `${label.value}: ${Hypergeometric.pmf(popMax, successesInPop, 1, 1) * 100}%\n`;
     }
   };
 
@@ -423,12 +473,12 @@ label {
   calcReset.textContent = "Reset to defaults";
   calcReset.style.display = "block";
   calcReset.addEventListener("click", (e) => {
-    inDeckInput.value = POPULATION_DEFAULT;
+    inDeckInput.value = inDeckDefaultInput.value;
 
     for (let i = 0; i < labels.length; i += 1) {
-      const elem = classElements[i];
+      const {input, defaultInput} = classElements[i];
 
-      elem.value = CLASS_DEFAULTS[i];
+      input.value = defaultInput.value;
     }
 
     renderCalc();
