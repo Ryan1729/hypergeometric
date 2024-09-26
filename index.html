@@ -331,6 +331,51 @@ label {
 
   render();
 
+  const CLASS_INDEX_KEY = "class-index-key";
+
+  const CLASS_ENTRIES_KEYS = ["class-entries-key-0", "class-entries-key-1", "class-entries-key-2", "class-entries-key-3", "class-entries-key-4"];
+
+  const loadClassEntriesIndex = () => {
+    let index = window.localStorage.getItem(CLASS_INDEX_KEY);
+    if (typeof index === "string") {
+        index = JSON.parse(index)
+    }
+    if (typeof index !== "number") {
+        index = 0
+        window.localStorage.setItem(CLASS_INDEX_KEY, index)
+    }
+
+    return index
+  };
+
+  const saveClassEntries = () => {
+    let index = loadClassEntriesIndex();
+
+    index += 1;
+    index %= CLASS_ENTRIES_KEYS.length;
+
+    window.localStorage.setItem(CLASS_ENTRIES_KEYS[index], JSON.stringify(classEntries))
+    window.localStorage.setItem(CLASS_INDEX_KEY, index);
+  };
+
+  const loadClassEntriesOrDefault = () => {
+    const index = loadClassEntriesIndex();
+
+    const parsed = JSON.parse(window.localStorage.getItem(CLASS_ENTRIES_KEYS[index]))
+
+    if (parsed) {
+        return parsed
+    } else {
+        return [
+          { amount: defaultAmountForIndex(0), label: defaultLabelForIndex(0) },
+          { amount: defaultAmountForIndex(1), label: defaultLabelForIndex(1) },
+          { amount: defaultAmountForIndex(2), label: defaultLabelForIndex(2) },
+          { amount: defaultAmountForIndex(3), label: defaultLabelForIndex(3) },
+          { amount: defaultAmountForIndex(4), label: defaultLabelForIndex(4) }
+        ];
+    }
+  };
+
   const calcLabel = document.createElement("div");
   calcLabel.textContent = "Single Draw calculator";
   calcLabel.style.marginTop = "2ex";
@@ -379,6 +424,7 @@ label {
     e.preventDefault();
 
     classEntries.pop();
+    saveClassEntries();
     resetClassControls();
   };
   presetControls.appendChild(removeClassButton);
@@ -391,6 +437,7 @@ label {
     const i = classEntries.length;
 
     classEntries.push({ amount: defaultAmountForIndex(i), label: defaultLabelForIndex(i) });
+    saveClassEntries();
     resetClassControls();
   };
   presetControls.appendChild(addClassButton);
@@ -399,8 +446,6 @@ label {
   presetControls.appendChild(classDefaultControlsWrapper);
   const classControlsWrapper = document.createElement("div");
   calcControls.appendChild(classControlsWrapper);
-
-  // TODO? save class labels and defaults to local storage?
 
   const defaultAmountForIndex = (i) => {
     switch (i) {
@@ -420,13 +465,7 @@ label {
     return "Class " + (i + 1);
   };
 
-  let classEntries = [
-    { amount: defaultAmountForIndex(0), label: defaultLabelForIndex(0) },
-    { amount: defaultAmountForIndex(1), label: defaultLabelForIndex(1) },
-    { amount: defaultAmountForIndex(2), label: defaultLabelForIndex(2) },
-    { amount: defaultAmountForIndex(3), label: defaultLabelForIndex(3) },
-    { amount: defaultAmountForIndex(4), label: defaultLabelForIndex(4) }
-  ];
+  let classEntries = loadClassEntriesOrDefault();
 
   let classElements = [];
 
@@ -481,6 +520,12 @@ label {
       labelElement.addEventListener("input", (e) => {
         setLabel(labelElement.value);
         renderCalc();
+      });
+      labelElement.addEventListener("change", (e) => {
+        if (i < classEntries.length) {
+          classEntries[i].label = labelElement.value;
+          saveClassEntries();
+        }
       });
 
       classControlsWrapper.appendChild(drew);
