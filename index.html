@@ -348,7 +348,11 @@ label {
     return index
   };
 
-  const saveClassEntries = () => {
+  const syncClassEntries = () => {
+    //
+    // Save to local storage
+    //
+
     let index = loadClassEntriesIndex();
 
     index += 1;
@@ -356,6 +360,8 @@ label {
 
     window.localStorage.setItem(CLASS_ENTRIES_KEYS[index], JSON.stringify(classEntries))
     window.localStorage.setItem(CLASS_INDEX_KEY, index);
+
+    resetClassControls();
   };
 
   const loadClassEntriesOrDefault = () => {
@@ -424,8 +430,8 @@ label {
     e.preventDefault();
 
     classEntries.pop();
-    saveClassEntries();
-    resetClassControls();
+
+    syncClassEntries();
   };
   presetControls.appendChild(removeClassButton);
 
@@ -437,15 +443,23 @@ label {
     const i = classEntries.length;
 
     classEntries.push({ amount: defaultAmountForIndex(i), label: defaultLabelForIndex(i) });
-    saveClassEntries();
-    resetClassControls();
+    syncClassEntries();
   };
   presetControls.appendChild(addClassButton);
+
+  // TODO count total in defined classes and whether it is the same as the in deck total
+  // TODO list counts of drawn classes
+  // TODO a calculator to assess how many unique draws of n cards there are, given different members of a class are considered identical, and order of draws doesn't matter
+  //  Huh, doesn't seem to be an easy to find formula for this, at least as I have phrased it
 
   const classDefaultControlsWrapper = document.createElement("div");
   presetControls.appendChild(classDefaultControlsWrapper);
   const classControlsWrapper = document.createElement("div");
   calcControls.appendChild(classControlsWrapper);
+
+  const classTotalOutput = document.createElement("output");
+
+  presetControls.appendChild(classTotalOutput);
 
   const defaultAmountForIndex = (i) => {
     switch (i) {
@@ -475,10 +489,11 @@ label {
     classDefaultControlsWrapper.innerHTML = "";
     classControlsWrapper.innerHTML = "";
 
+    let classMemeberTotal = 0;
     for (let i = 0; i < classEntries.length; i += 1) {
       const wrapper = document.createElement("div");
 
-      const id = i + "-input";
+      const id = i + "-class-input";
 
       const input = document.createElement("input");
       input.type = "number";
@@ -501,8 +516,25 @@ label {
       const defaultInput = document.createElement("input");
       defaultInput.type = "number";
       defaultInput.id = defaultId;
-      defaultInput.value = previousElements[i]?.defaultInput?.value || classEntries[i].amount;
+      const defaultValue = previousElements[i]?.defaultInput?.value || classEntries[i].amount;
+      let defaultValueNumber = parseInt(defaultValue, 10);
+      if (!isNaN(defaultValueNumber)) {
+        classMemeberTotal += defaultValueNumber;
+      } else {
+        console.error("defaultValueNumber was NaN!")
+      }
+      defaultInput.value = defaultValue;
+
       defaultWrapper.appendChild(defaultInput);
+      defaultInput.addEventListener("change", (e) => {
+        if (i < classEntries.length) {
+          let newValue = parseInt(defaultInput.value, 10);
+          if (!isNaN(newValue)) {
+            classEntries[i].amount = newValue;
+            syncClassEntries();
+          }
+        }
+      });
 
       const defaultLabel = document.createElement("label");
       defaultLabel.htmlFor = defaultId;
@@ -524,7 +556,7 @@ label {
       labelElement.addEventListener("change", (e) => {
         if (i < classEntries.length) {
           classEntries[i].label = labelElement.value;
-          saveClassEntries();
+          syncClassEntries();
         }
       });
 
@@ -540,6 +572,25 @@ label {
 
       classElements.push({input, label: labelElement, defaultInput, defaultLabel});
     }
+
+    let classTotalOutputString = "";
+    classTotalOutputString += classMemeberTotal;
+    classTotalOutputString += " total class member(s). ";
+
+    const currentDefaultInDeckValue = parseInt(inDeckDefaultInput.value, 10);
+    if (isNaN(currentDefaultInDeckValue)) {
+      console.error("currentDefaultInDeckValue was NaN")
+    } else {
+      if (currentDefaultInDeckValue === classMemeberTotal) {
+        classTotalOutputString += "All cards in the deck accounted for.";
+      } else if (currentDefaultInDeckValue > classMemeberTotal) {
+        classTotalOutputString += "Some cards in the deck unaccounted for.";
+      } else {
+        classTotalOutputString += "That's more than all the cards in the deck!";
+      }
+    }
+
+    classTotalOutput.textContent = classTotalOutputString
   };
   resetClassControls();
 
