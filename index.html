@@ -454,6 +454,7 @@ label {
   presetControls.appendChild(classDefaultControlsWrapper);
   const classControlsWrapper = document.createElement("div");
   calcControls.appendChild(classControlsWrapper);
+  const drewButtonsWrapper = document.createElement("div");
 
   const classTotalOutput = document.createElement("output");
 
@@ -487,6 +488,7 @@ label {
     classElements = [];
     classDefaultControlsWrapper.innerHTML = "";
     classControlsWrapper.innerHTML = "";
+    drewButtonsWrapper.innerHTML = "";
 
     let classMemeberTotal = 0;
     for (let i = 0; i < classEntries.length; i += 1) {
@@ -559,7 +561,7 @@ label {
         }
       });
 
-      classControlsWrapper.appendChild(drew);
+      drewButtonsWrapper.appendChild(drew);
       drew.addEventListener("click", (e) => {
         e.preventDefault();
         input.value -= 1;
@@ -658,6 +660,7 @@ label {
   calcControls.addEventListener("change", renderCalc);
 
   root.appendChild(calcControls);
+  root.appendChild(drewButtonsWrapper);
   root.appendChild(calcOutput);
 
   const calcReset = document.createElement("button");
