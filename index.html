@@ -447,9 +447,7 @@ label {
   };
   presetControls.appendChild(addClassButton);
 
-  // TODO count total in defined classes and whether it is the same as the in deck total
-  // TODO list counts of drawn classes
-  // TODO a calculator to assess how many unique draws of n cards there are, given different members of a class are considered identical, and order of draws doesn't matter
+  // TODO? a calculator to assess how many unique draws of n cards there are, given different members of a class are considered identical, and order of draws doesn't matter
   //  Huh, doesn't seem to be an easy to find formula for this, at least as I have phrased it
 
   const classDefaultControlsWrapper = document.createElement("div");
@@ -482,6 +480,7 @@ label {
   let classEntries = loadClassEntriesOrDefault();
 
   let classElements = [];
+  let drawnSinceReset = {}
 
   const resetClassControls = () => {
     let previousElements = classElements;
@@ -567,7 +566,18 @@ label {
 
         inDeckInput.value -= 1;
 
+        if (parseInt(input.value, 10) >= 0 && parseInt(inDeckInput.value, 10) >= 0) {
+          const label = labelElement.value;
+          if (drawnSinceReset[label]) {
+            drawnSinceReset[label] += 1;
+          } else {
+            drawnSinceReset[label] = 1;
+          }
+        }
+
         renderCalc()
+
+
       });
 
       classElements.push({input, label: labelElement, defaultInput, defaultLabel});
@@ -630,6 +640,19 @@ label {
 
       calcOutput.textContent += `${label.value}: ${formatPercent(Hypergeometric.pmf(popMax, successesInPop, 1, 1))}%\n`;
     }
+
+    calcOutput.textContent += "\nDrawn Counts\n";
+
+    for (let i = 0; i < classEntries.length; i += 1) {
+      const {label} = classElements[i];
+
+      const drawnAmount = drawnSinceReset[label.value];
+
+      if (drawnAmount) {
+        calcOutput.textContent += `${label.value}: ${drawnAmount}\n`;
+      }
+    }
+
   };
 
   calcControls.addEventListener("change", renderCalc);
@@ -641,6 +664,8 @@ label {
   calcReset.textContent = "Reset to defaults";
   calcReset.style.display = "block";
   calcReset.addEventListener("click", (e) => {
+    drawnSinceReset = {};
+
     inDeckInput.value = inDeckDefaultInput.value;
 
     for (let i = 0; i < classEntries.length; i += 1) {
