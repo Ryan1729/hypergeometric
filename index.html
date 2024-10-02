@@ -34,6 +34,20 @@ label {
 </body>
 
 <script type="text/javascript">
+  const DEBUG_MODE = location.protocol === "file:";
+
+  const appendDetails = (parent, label) => {
+    const details = document.createElement("details");
+
+    const summary = document.createElement("summary");
+    summary.textContent = label;
+    details.appendChild(summary);
+
+    parent.appendChild(details);
+
+    return details;
+  };
+
   const STYLES = ['surface', 'bar', /*'bar-color',*/ 'bar-size', 'dot', 'dot-line', /*'dot-color',*/ 'dot-size', 'line', 'grid'];
 
   const root = document.getElementById("root");
@@ -143,13 +157,15 @@ label {
       tempGlobal.tableContainer.innerHTML = "";
     }
 
+    //
     // Render individual probabilty table
-    (() => {
-      const individualDetails = document.createElement("details");
+    //
 
-      const individualSummary = document.createElement("summary");
-      individualSummary.textContent = "individual probabilty table";
-      individualDetails.appendChild(individualSummary);
+    (() => {
+      const individualDetails = appendDetails(
+        tempGlobal.tableContainer,
+        "individual probabilty table"
+      );
 
       const individualTable = document.createElement("table");
 
@@ -189,17 +205,13 @@ label {
       }
 
       individualDetails.appendChild(individualTable);
-
-      tempGlobal.tableContainer.appendChild(individualDetails);
     })();
 
+    //
     // Render "at-least" probabilty table
+    //
     (() => {
-      const atLeastDetails = document.createElement("details");
-
-      const atLeastSummary = document.createElement("summary");
-      atLeastSummary.textContent = "at-least probabilty table";
-      atLeastDetails.appendChild(atLeastSummary);
+      const atLeastDetails = appendDetails(tempGlobal.tableContainer, "at-least probabilty table");
 
       const atLeastTable = document.createElement("table");
 
@@ -382,12 +394,13 @@ label {
     }
   };
 
-  const calcLabel = document.createElement("div");
-  calcLabel.textContent = "Single Draw calculator";
-  calcLabel.style.marginTop = "2ex";
-  root.appendChild(calcLabel);
+  //
+  // Setup Single Draw Calculator
+  //
 
-  const calcControls = document.createElement("form");
+  const classCalcDetails = appendDetails(root, "Single Draw Calculator");
+
+  const classCalcControls = document.createElement("form");
 
   const presetControls = document.createElement("div");
   presetControls.style.border = "solid #888";
@@ -396,18 +409,18 @@ label {
   presetHeading.textContent = "Preset Controls"
   presetControls.appendChild(presetHeading);
 
-  calcControls.appendChild(presetControls);
+  classCalcControls.appendChild(presetControls);
 
   const inDeckInput = document.createElement("input");
   inDeckInput.type = "number";
   inDeckInput.id = "in-deck-input";
   inDeckInput.value = POPULATION_DEFAULT;
-  calcControls.appendChild(inDeckInput);
+  classCalcControls.appendChild(inDeckInput);
 
   const inDeckLabel = document.createElement("label");
   inDeckLabel.htmlFor = "in-deck-input";
   inDeckLabel.innerHTML = "In Deck";
-  calcControls.appendChild(inDeckLabel);
+  classCalcControls.appendChild(inDeckLabel);
 
   const inDeckDefaultWrapper = document.createElement("div");
 
@@ -447,13 +460,10 @@ label {
   };
   presetControls.appendChild(addClassButton);
 
-  // TODO? a calculator to assess how many unique draws of n cards there are, given different members of a class are considered identical, and order of draws doesn't matter
-  //  Huh, doesn't seem to be an easy to find formula for this, at least as I have phrased it
-
   const classDefaultControlsWrapper = document.createElement("div");
   presetControls.appendChild(classDefaultControlsWrapper);
   const classControlsWrapper = document.createElement("div");
-  calcControls.appendChild(classControlsWrapper);
+  classCalcControls.appendChild(classControlsWrapper);
   const drewButtonsWrapper = document.createElement("div");
 
   const classTotalOutput = document.createElement("output");
@@ -552,7 +562,7 @@ label {
       setLabel(previousElements[i]?.label?.value || classEntries[i].label);
       labelElement.addEventListener("input", (e) => {
         setLabel(labelElement.value);
-        renderCalc();
+        renderClassCalc();
       });
       labelElement.addEventListener("change", (e) => {
         if (i < classEntries.length) {
@@ -577,7 +587,7 @@ label {
           }
         }
 
-        renderCalc()
+        renderClassCalc()
 
 
       });
@@ -606,7 +616,7 @@ label {
   };
   resetClassControls();
 
-  const calcOutput = document.createElement("pre");
+  const classCalcOutput = document.createElement("pre");
 
   const formatPercent = (n01) => {
     let output = (n01 * 100).toFixed(5);
@@ -624,13 +634,13 @@ label {
     return output;
   };
 
-  const renderCalc = () => {
+  const renderClassCalc = () => {
     let popMax = parseInt(inDeckInput.value, 10);
     if (isNaN(popMax)) {
       popMax = POPULATION_DEFAULT;
     }
 
-    calcOutput.textContent = "";
+    classCalcOutput.textContent = "";
 
     for (let i = 0; i < classEntries.length; i += 1) {
       const {input, label} = classElements[i];
@@ -640,10 +650,10 @@ label {
         successesInPop = 0;
       }
 
-      calcOutput.textContent += `${label.value}: ${formatPercent(Hypergeometric.pmf(popMax, successesInPop, 1, 1))}%\n`;
+      classCalcOutput.textContent += `${label.value}: ${formatPercent(Hypergeometric.pmf(popMax, successesInPop, 1, 1))}%\n`;
     }
 
-    calcOutput.textContent += "\nDrawn Counts\n";
+    classCalcOutput.textContent += "\nDrawn Counts\n";
 
     for (let i = 0; i < classEntries.length; i += 1) {
       const {label} = classElements[i];
@@ -651,22 +661,22 @@ label {
       const drawnAmount = drawnSinceReset[label.value];
 
       if (drawnAmount) {
-        calcOutput.textContent += `${label.value}: ${drawnAmount}\n`;
+        classCalcOutput.textContent += `${label.value}: ${drawnAmount}\n`;
       }
     }
 
   };
 
-  calcControls.addEventListener("change", renderCalc);
+  classCalcControls.addEventListener("change", renderClassCalc);
 
-  root.appendChild(calcControls);
-  root.appendChild(drewButtonsWrapper);
-  root.appendChild(calcOutput);
+  classCalcDetails.appendChild(classCalcControls);
+  classCalcDetails.appendChild(drewButtonsWrapper);
+  classCalcDetails.appendChild(classCalcOutput);
 
-  const calcReset = document.createElement("button");
-  calcReset.textContent = "Reset to defaults";
-  calcReset.style.display = "block";
-  calcReset.addEventListener("click", (e) => {
+  const classCalcReset = document.createElement("button");
+  classCalcReset.textContent = "Reset to defaults";
+  classCalcReset.style.display = "block";
+  classCalcReset.addEventListener("click", (e) => {
     drawnSinceReset = {};
 
     inDeckInput.value = inDeckDefaultInput.value;
@@ -677,12 +687,45 @@ label {
       input.value = defaultInput.value;
     }
 
-    renderCalc();
+    renderClassCalc();
   });
-  root.appendChild(calcReset);
+  classCalcDetails.appendChild(classCalcReset);
 
-  renderCalc();
+  renderClassCalc();
 
+  //
+  // Setup Unique Draws Calculator
+  //
+
+  (() => {
+    // TODO? a calculator to assess how many unique draws of n cards there are, given different members of a class are considered identical, and order of draws doesn't matter
+    //  Huh, doesn't seem to be an easy to find formula for this, at least as I have phrased it
+    //  Upon more searchng and some reflection, calcualting this without actually doing the actual duplocaite checking seems like it requires the numbers of types of hands
+    //  in terms of numbers of duplicates (as in no duplicates, 2 the same, 3 the same, 2 the same of one as well as 2 the same of another, and so on), which is itself non-trivial
+    //  Then we need to iterate over those cases and calculate a subexpression for each of them. So not as surprising that there's not an easy to find way to calcaulte this.
+    //
+    //  Proposed Steps:
+    //    Add DEBUG_MODE flag ✔
+    //    Add controls for this calculation behind said flag, with placeholder function for calculation
+    //      Move class naming into classDefaultControlsWrapper controls
+    //      extract classDefaultControlsWrapper setup into a reuseable function, with its own state
+    //        Maybe it should load the classes from the same localstorage though? Might want to add selecting controls now?
+    //      use that to add a separate class editor for the unique draws calculator
+    //    Write the naive, slow, but clearly correct version of the calculation function and see if it's actually too slow for our use case
+    //      If it's fast enough, ship it and move on
+    //    Add a unit test file, copy the slow verison in there, write a test that checks the two copies are the same, on small but non-trivial cases
+    //    Change the live copy to be faster, using the method involving calculating the number of types of hands in terms of numbers of duplicates as described above
+    //    Expand tests as needed until we are convinced that the fast impl is correct
+    //    pull controls out from behind DEBUG_MODE flag
+
+    if (!DEBUG_MODE) {
+      return
+    }
+
+    const uniqueDetails = appendDetails(root, "Unique Draws Calculator");
+
+    // const classControls = appendClassControls(...);
+  })();
 
 </script>
 
