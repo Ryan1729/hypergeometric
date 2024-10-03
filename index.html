@@ -512,9 +512,9 @@ label {
       input.value = previousElements[i]?.input?.value || classEntries[i].amount;
       wrapper.appendChild(input);
 
-      const labelElement = document.createElement("input");
-
-      wrapper.appendChild(labelElement);
+      const classLabelElement = document.createElement("label");
+      classLabelElement.htmlFor = id;
+      wrapper.appendChild(classLabelElement);
 
       classControlsWrapper.appendChild(wrapper);
 
@@ -546,17 +546,15 @@ label {
           }
         }
       });
-
-      const defaultLabel = document.createElement("label");
-      defaultLabel.htmlFor = defaultId;
-      defaultWrapper.appendChild(defaultLabel);
+      const labelElement = document.createElement("input");
+      defaultWrapper.appendChild(labelElement);
 
       classDefaultControlsWrapper.appendChild(defaultWrapper);
 
       const setLabel = (label) => {
         labelElement.value = label;
         drew.textContent = "drew " + label;
-        defaultLabel.textContent = "Default for " + label;
+        classLabelElement.textContent = label;
       };
 
       setLabel(previousElements[i]?.label?.value || classEntries[i].label);
@@ -592,7 +590,7 @@ label {
 
       });
 
-      classElements.push({input, label: labelElement, defaultInput, defaultLabel});
+      classElements.push({input, label: labelElement, defaultInput, classLabelElement});
     }
 
     let classTotalOutputString = "";
@@ -707,7 +705,7 @@ label {
     //  Proposed Steps:
     //    Add DEBUG_MODE flag ✔
     //    Add controls for this calculation behind said flag, with placeholder function for calculation
-    //      Move class naming into classDefaultControlsWrapper controls
+    //      Move class naming into classDefaultControlsWrapper controls ✔
     //      extract classDefaultControlsWrapper setup into a reuseable function, with its own state
     //        Maybe it should load the classes from the same localstorage though? Might want to add selecting controls now?
     //      use that to add a separate class editor for the unique draws calculator
