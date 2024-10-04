@@ -549,6 +549,67 @@ label {
       const labelElement = document.createElement("input");
       defaultWrapper.appendChild(labelElement);
 
+      const moveButtonWidth = "24px";
+
+      const canMoveUp = i > 0;
+      const canMoveDown = i < classEntries.length - 1;
+
+      if (canMoveUp) {
+        const moveUpButton = document.createElement("button");
+        moveUpButton.textContent = "⌃";
+        moveUpButton.style.width = moveButtonWidth;
+        defaultWrapper.appendChild(moveUpButton);
+
+        moveUpButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (canMoveUp) {
+            const tempEntry = classEntries[i - 1];
+            classEntries[i - 1] = classEntries[i];
+            classEntries[i] = tempEntry;
+
+            // Gotta swap classElements too, since the preveious values
+            // are read out of there.
+
+            const tempElement = classElements[i - 1];
+            classElements[i - 1] = classElements[i];
+            classElements[i] = tempElement;
+
+            syncClassEntries();
+          }
+        });
+      }
+
+      if (canMoveDown) {
+        const moveDownButton = document.createElement("button");
+        moveDownButton.textContent = "⌄";
+        moveDownButton.style.width = moveButtonWidth;
+        if (!canMoveUp) {
+          // Add spacing to replace the absent move up button
+          moveDownButton.style.marginLeft = moveButtonWidth;
+        }
+        defaultWrapper.appendChild(moveDownButton);
+
+        defaultWrapper.appendChild(moveDownButton);
+
+        moveDownButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (canMoveDown) {
+            const tempEntry = classEntries[i + 1];
+            classEntries[i + 1] = classEntries[i];
+            classEntries[i] = tempEntry;
+
+            // Gotta swap classElements too, since the preveious values
+            // are read out of there.
+
+            const tempElement = classElements[i + 1];
+            classElements[i + 1] = classElements[i];
+            classElements[i] = tempElement;
+
+            syncClassEntries();
+          }
+        });
+      }
+
       classDefaultControlsWrapper.appendChild(defaultWrapper);
 
       const setLabel = (label) => {
