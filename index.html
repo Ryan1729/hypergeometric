@@ -462,13 +462,12 @@ label {
 
   const classDefaultControlsWrapper = document.createElement("div");
   presetControls.appendChild(classDefaultControlsWrapper);
+  const classTotalOutput = document.createElement("output");
+  presetControls.appendChild(classTotalOutput);
+
   const classControlsWrapper = document.createElement("div");
   classCalcControls.appendChild(classControlsWrapper);
   const drewButtonsWrapper = document.createElement("div");
-
-  const classTotalOutput = document.createElement("output");
-
-  presetControls.appendChild(classTotalOutput);
 
   const defaultAmountForIndex = (i) => {
     switch (i) {
@@ -492,6 +491,118 @@ label {
 
   let classElements = [];
   let drawnSinceReset = {}
+
+  const appendDefaultRow = ({parent, idSuffix, i, previousElements, classEntries, classElements, syncClassEntries, onSetLabel}) => {
+    const defaultWrapper = document.createElement("div");
+
+    const defaultId = i + "-" + idSuffix;
+
+    const defaultInput = document.createElement("input");
+    defaultInput.type = "number";
+    defaultInput.id = defaultId;
+    defaultInput.value = previousElements[i]?.defaultInput?.value || classEntries[i].amount;
+
+    defaultWrapper.appendChild(defaultInput);
+    defaultInput.addEventListener("change", (e) => {
+      if (i < classEntries.length) {
+        let newValue = parseInt(defaultInput.value, 10);
+        if (!isNaN(newValue)) {
+          classEntries[i].amount = newValue;
+          syncClassEntries();
+        }
+      }
+    });
+    const labelElement = document.createElement("input");
+    defaultWrapper.appendChild(labelElement);
+
+    const setLabel = (label) => {
+      labelElement.value = label;
+
+      if (onSetLabel) {
+        onSetLabel(label);
+      }
+    };
+
+    setLabel(previousElements[i]?.label?.value || classEntries[i].label);
+    labelElement.addEventListener("input", (e) => {
+      setLabel(labelElement.value);
+      renderClassCalc();
+    });
+    labelElement.addEventListener("change", (e) => {
+      if (i < classEntries.length) {
+        classEntries[i].label = labelElement.value;
+        syncClassEntries();
+      }
+    });
+
+    const moveButtonWidth = "24px";
+
+    const canMoveUp = i > 0;
+    const canMoveDown = i < classEntries.length - 1;
+
+    if (canMoveUp) {
+      const moveUpButton = document.createElement("button");
+      moveUpButton.textContent = "⌃";
+      moveUpButton.style.width = moveButtonWidth;
+      defaultWrapper.appendChild(moveUpButton);
+
+      moveUpButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (canMoveUp) {
+          const tempEntry = classEntries[i - 1];
+          classEntries[i - 1] = classEntries[i];
+          classEntries[i] = tempEntry;
+
+          // Gotta swap classElements too, since the preveious values
+          // are read out of there.
+
+          const tempElement = classElements[i - 1];
+          classElements[i - 1] = classElements[i];
+          classElements[i] = tempElement;
+
+          syncClassEntries();
+        }
+      });
+    }
+
+    if (canMoveDown) {
+      const moveDownButton = document.createElement("button");
+      moveDownButton.textContent = "⌄";
+      moveDownButton.style.width = moveButtonWidth;
+      if (!canMoveUp) {
+        // Add spacing to replace the absent move up button
+        moveDownButton.style.marginLeft = moveButtonWidth;
+      }
+      defaultWrapper.appendChild(moveDownButton);
+
+      defaultWrapper.appendChild(moveDownButton);
+
+      moveDownButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (canMoveDown) {
+          const tempEntry = classEntries[i + 1];
+          classEntries[i + 1] = classEntries[i];
+          classEntries[i] = tempEntry;
+
+          // Gotta swap classElements too, since the preveious values
+          // are read out of there.
+
+          const tempElement = classElements[i + 1];
+          classElements[i + 1] = classElements[i];
+          classElements[i] = tempElement;
+
+          syncClassEntries();
+        }
+      });
+    }
+
+    parent.appendChild(defaultWrapper);
+
+    return {
+      labelElement,
+      defaultInput,
+    }
+  };
 
   const resetClassControls = () => {
     let previousElements = classElements;
@@ -520,115 +631,28 @@ label {
 
       const drew = document.createElement("button");
 
-      const defaultWrapper = document.createElement("div");
+      const onSetLabel = (label) => {
+        drew.textContent = "drew " + label;
+        classLabelElement.textContent = label;
+      };
 
-      const defaultId = i + "-default-input";
+      const defaultRow = appendDefaultRow({
+        parent: classDefaultControlsWrapper,
+        idSuffix: "default-input",
+        i,
+        previousElements,
+        classEntries,
+        classElements,
+        syncClassEntries,
+        onSetLabel
+      });
 
-      const defaultInput = document.createElement("input");
-      defaultInput.type = "number";
-      defaultInput.id = defaultId;
-      const defaultValue = previousElements[i]?.defaultInput?.value || classEntries[i].amount;
-      let defaultValueNumber = parseInt(defaultValue, 10);
+      let defaultValueNumber = parseInt(defaultRow.defaultInput.value, 10);
       if (!isNaN(defaultValueNumber)) {
         classMemeberTotal += defaultValueNumber;
       } else {
         console.error("defaultValueNumber was NaN!")
       }
-      defaultInput.value = defaultValue;
-
-      defaultWrapper.appendChild(defaultInput);
-      defaultInput.addEventListener("change", (e) => {
-        if (i < classEntries.length) {
-          let newValue = parseInt(defaultInput.value, 10);
-          if (!isNaN(newValue)) {
-            classEntries[i].amount = newValue;
-            syncClassEntries();
-          }
-        }
-      });
-      const labelElement = document.createElement("input");
-      defaultWrapper.appendChild(labelElement);
-
-      const moveButtonWidth = "24px";
-
-      const canMoveUp = i > 0;
-      const canMoveDown = i < classEntries.length - 1;
-
-      if (canMoveUp) {
-        const moveUpButton = document.createElement("button");
-        moveUpButton.textContent = "⌃";
-        moveUpButton.style.width = moveButtonWidth;
-        defaultWrapper.appendChild(moveUpButton);
-
-        moveUpButton.addEventListener("click", (e) => {
-          e.preventDefault();
-          if (canMoveUp) {
-            const tempEntry = classEntries[i - 1];
-            classEntries[i - 1] = classEntries[i];
-            classEntries[i] = tempEntry;
-
-            // Gotta swap classElements too, since the preveious values
-            // are read out of there.
-
-            const tempElement = classElements[i - 1];
-            classElements[i - 1] = classElements[i];
-            classElements[i] = tempElement;
-
-            syncClassEntries();
-          }
-        });
-      }
-
-      if (canMoveDown) {
-        const moveDownButton = document.createElement("button");
-        moveDownButton.textContent = "⌄";
-        moveDownButton.style.width = moveButtonWidth;
-        if (!canMoveUp) {
-          // Add spacing to replace the absent move up button
-          moveDownButton.style.marginLeft = moveButtonWidth;
-        }
-        defaultWrapper.appendChild(moveDownButton);
-
-        defaultWrapper.appendChild(moveDownButton);
-
-        moveDownButton.addEventListener("click", (e) => {
-          e.preventDefault();
-          if (canMoveDown) {
-            const tempEntry = classEntries[i + 1];
-            classEntries[i + 1] = classEntries[i];
-            classEntries[i] = tempEntry;
-
-            // Gotta swap classElements too, since the preveious values
-            // are read out of there.
-
-            const tempElement = classElements[i + 1];
-            classElements[i + 1] = classElements[i];
-            classElements[i] = tempElement;
-
-            syncClassEntries();
-          }
-        });
-      }
-
-      classDefaultControlsWrapper.appendChild(defaultWrapper);
-
-      const setLabel = (label) => {
-        labelElement.value = label;
-        drew.textContent = "drew " + label;
-        classLabelElement.textContent = label;
-      };
-
-      setLabel(previousElements[i]?.label?.value || classEntries[i].label);
-      labelElement.addEventListener("input", (e) => {
-        setLabel(labelElement.value);
-        renderClassCalc();
-      });
-      labelElement.addEventListener("change", (e) => {
-        if (i < classEntries.length) {
-          classEntries[i].label = labelElement.value;
-          syncClassEntries();
-        }
-      });
 
       drewButtonsWrapper.appendChild(drew);
       drew.addEventListener("click", (e) => {
@@ -647,11 +671,10 @@ label {
         }
 
         renderClassCalc()
-
-
       });
 
-      classElements.push({input, label: labelElement, defaultInput, classLabelElement});
+      // TODO separate the input and the other elements into separate arrays
+      classElements.push({input, label: defaultRow.labelElement, defaultInput: defaultRow.defaultInput});
     }
 
     let classTotalOutputString = "";
