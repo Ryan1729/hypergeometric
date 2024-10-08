@@ -422,12 +422,103 @@ label {
   inDeckLabel.innerHTML = "In Deck";
   classCalcControls.appendChild(inDeckLabel);
 
+  const resetClassControls = () => {
+    let previousCurrentElements = classCurrentElements;
+    classCurrentElements = [];
+    ClassDefaults.resetElements(singleDrawCalculatorDefaults);
+    classDefaultControlsWrapper.innerHTML = "";
+    classControlsWrapper.innerHTML = "";
+    drewButtonsWrapper.innerHTML = "";
+
+    let classMemeberTotal = 0;
+    for (let i = 0; i < classEntries.length; i += 1) {
+      const wrapper = document.createElement("div");
+
+      const id = i + "-class-input";
+
+      const input = document.createElement("input");
+      input.type = "number";
+      input.id = id;
+      input.value = previousCurrentElements[i]?.input?.value || classEntries[i].amount;
+      wrapper.appendChild(input);
+
+      const classLabelElement = document.createElement("label");
+      classLabelElement.htmlFor = id;
+      wrapper.appendChild(classLabelElement);
+
+      classControlsWrapper.appendChild(wrapper);
+
+      const drew = document.createElement("button");
+
+      const onSetLabel = (label) => {
+        drew.textContent = "drew " + label;
+        classLabelElement.textContent = label;
+      };
+
+      appendDefaultRow({
+        parent: classDefaultControlsWrapper,
+        idSuffix: "default-input",
+        i,
+        classEntries,
+        classDefaults: singleDrawCalculatorDefaults,
+        syncClassEntries,
+        onSetLabel
+      });
+
+      let defaultValueNumber = ClassDefaults.defaultValueForIndex(singleDrawCalculatorDefaults, i);
+      classMemeberTotal += defaultValueNumber;
+
+      drewButtonsWrapper.appendChild(drew);
+      drew.addEventListener("click", (e) => {
+        e.preventDefault();
+        input.value -= 1;
+
+        inDeckInput.value -= 1;
+
+        if (parseInt(input.value, 10) >= 0 && parseInt(inDeckInput.value, 10) >= 0) {
+          const label = labelElement.value;
+          if (drawnSinceReset[label]) {
+            drawnSinceReset[label] += 1;
+          } else {
+            drawnSinceReset[label] = 1;
+          }
+        }
+
+        renderClassCalc()
+      });
+
+      classCurrentElements.push({input});
+    }
+
+    let classTotalOutputString = "";
+    classTotalOutputString += classMemeberTotal;
+    classTotalOutputString += " total class member(s). ";
+
+    const currentDefaultInDeckValue = parseInt(inDeckDefaultInput.value, 10);
+    if (isNaN(currentDefaultInDeckValue)) {
+      console.error("currentDefaultInDeckValue was NaN")
+    } else {
+      if (currentDefaultInDeckValue === classMemeberTotal) {
+        classTotalOutputString += "All cards in the deck accounted for.";
+      } else if (currentDefaultInDeckValue > classMemeberTotal) {
+        classTotalOutputString += "Some cards in the deck unaccounted for.";
+      } else {
+        classTotalOutputString += "That's more than all the cards in the deck!";
+      }
+    }
+
+    classTotalOutput.textContent = classTotalOutputString;
+  };
+
   const inDeckDefaultWrapper = document.createElement("div");
 
   const inDeckDefaultInput = document.createElement("input");
   inDeckDefaultInput.type = "number";
   inDeckDefaultInput.id = "in-deck-default-input";
   inDeckDefaultInput.value = POPULATION_DEFAULT;
+  inDeckDefaultInput.addEventListener("change", () => {
+    resetClassControls();
+  })
   inDeckDefaultWrapper.appendChild(inDeckDefaultInput);
 
   const inDeckDefaultLabel = document.createElement("label");
@@ -656,93 +747,6 @@ label {
     ClassDefaults.pushElement(classDefaults, {label: labelElement, defaultInput});
   };
 
-  const resetClassControls = () => {
-    let previousCurrentElements = classCurrentElements;
-    classCurrentElements = [];
-    ClassDefaults.resetElements(singleDrawCalculatorDefaults);
-    classDefaultControlsWrapper.innerHTML = "";
-    classControlsWrapper.innerHTML = "";
-    drewButtonsWrapper.innerHTML = "";
-
-    let classMemeberTotal = 0;
-    for (let i = 0; i < classEntries.length; i += 1) {
-      const wrapper = document.createElement("div");
-
-      const id = i + "-class-input";
-
-      const input = document.createElement("input");
-      input.type = "number";
-      input.id = id;
-      input.value = previousCurrentElements[i]?.input?.value || classEntries[i].amount;
-      wrapper.appendChild(input);
-
-      const classLabelElement = document.createElement("label");
-      classLabelElement.htmlFor = id;
-      wrapper.appendChild(classLabelElement);
-
-      classControlsWrapper.appendChild(wrapper);
-
-      const drew = document.createElement("button");
-
-      const onSetLabel = (label) => {
-        drew.textContent = "drew " + label;
-        classLabelElement.textContent = label;
-      };
-
-      appendDefaultRow({
-        parent: classDefaultControlsWrapper,
-        idSuffix: "default-input",
-        i,
-        classEntries,
-        classDefaults: singleDrawCalculatorDefaults,
-        syncClassEntries,
-        onSetLabel
-      });
-
-      let defaultValueNumber = ClassDefaults.defaultValueForIndex(singleDrawCalculatorDefaults, i);
-      classMemeberTotal += defaultValueNumber;
-
-      drewButtonsWrapper.appendChild(drew);
-      drew.addEventListener("click", (e) => {
-        e.preventDefault();
-        input.value -= 1;
-
-        inDeckInput.value -= 1;
-
-        if (parseInt(input.value, 10) >= 0 && parseInt(inDeckInput.value, 10) >= 0) {
-          const label = labelElement.value;
-          if (drawnSinceReset[label]) {
-            drawnSinceReset[label] += 1;
-          } else {
-            drawnSinceReset[label] = 1;
-          }
-        }
-
-        renderClassCalc()
-      });
-
-      classCurrentElements.push({input});
-    }
-
-    let classTotalOutputString = "";
-    classTotalOutputString += classMemeberTotal;
-    classTotalOutputString += " total class member(s). ";
-
-    const currentDefaultInDeckValue = parseInt(inDeckDefaultInput.value, 10);
-    if (isNaN(currentDefaultInDeckValue)) {
-      console.error("currentDefaultInDeckValue was NaN")
-    } else {
-      if (currentDefaultInDeckValue === classMemeberTotal) {
-        classTotalOutputString += "All cards in the deck accounted for.";
-      } else if (currentDefaultInDeckValue > classMemeberTotal) {
-        classTotalOutputString += "Some cards in the deck unaccounted for.";
-      } else {
-        classTotalOutputString += "That's more than all the cards in the deck!";
-      }
-    }
-
-    classTotalOutput.textContent = classTotalOutputString
-  };
   resetClassControls();
 
   const classCalcOutput = document.createElement("pre");
