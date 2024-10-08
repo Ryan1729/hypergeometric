@@ -409,6 +409,52 @@ label {
   presetHeading.textContent = "Preset Controls"
   presetControls.appendChild(presetHeading);
 
+  const inDeckDefaultWrapper = document.createElement("div");
+
+  const inDeckDefaultInput = document.createElement("input");
+  inDeckDefaultInput.type = "number";
+  inDeckDefaultInput.id = "in-deck-default-input";
+  inDeckDefaultInput.value = POPULATION_DEFAULT;
+  inDeckDefaultInput.addEventListener("change", () => {
+    resetClassControls();
+  })
+  inDeckDefaultWrapper.appendChild(inDeckDefaultInput);
+
+  const inDeckDefaultLabel = document.createElement("label");
+  inDeckDefaultLabel.htmlFor = "in-deck-default-input";
+  inDeckDefaultLabel.textContent = "Default for In Deck";
+  inDeckDefaultWrapper.appendChild(inDeckDefaultLabel);
+
+  presetControls.appendChild(inDeckDefaultWrapper);
+
+  const removeClassButton = document.createElement("button");
+  removeClassButton.innerHTML = "&nbsp;&nbsp;-&nbsp;&nbsp;";
+  removeClassButton.onclick = (e) => {
+    e.preventDefault();
+
+    classEntries.pop();
+
+    syncClassEntries();
+  };
+  presetControls.appendChild(removeClassButton);
+
+  const addClassButton = document.createElement("button");
+  addClassButton.innerHTML = "&nbsp;&nbsp;+&nbsp;&nbsp;";
+  addClassButton.onclick = (e) => {
+    e.preventDefault();
+
+    const i = classEntries.length;
+
+    classEntries.push({ amount: defaultAmountForIndex(i), label: defaultLabelForIndex(i) });
+    syncClassEntries();
+  };
+  presetControls.appendChild(addClassButton);
+
+  const classDefaultControlsWrapper = document.createElement("div");
+  presetControls.appendChild(classDefaultControlsWrapper);
+  const classTotalOutput = document.createElement("output");
+  presetControls.appendChild(classTotalOutput);
+
   classCalcControls.appendChild(presetControls);
 
   const inDeckInput = document.createElement("input");
@@ -450,6 +496,9 @@ label {
 
       const drew = document.createElement("button");
 
+      // TODO instead of callbacks like this, re-render the calculator
+      // specific views when the stuff changes, by calling the
+      // ClassDefaults read methods
       const onSetLabel = (label) => {
         drew.textContent = "drew " + label;
         classLabelElement.textContent = label;
@@ -509,52 +558,6 @@ label {
 
     classTotalOutput.textContent = classTotalOutputString;
   };
-
-  const inDeckDefaultWrapper = document.createElement("div");
-
-  const inDeckDefaultInput = document.createElement("input");
-  inDeckDefaultInput.type = "number";
-  inDeckDefaultInput.id = "in-deck-default-input";
-  inDeckDefaultInput.value = POPULATION_DEFAULT;
-  inDeckDefaultInput.addEventListener("change", () => {
-    resetClassControls();
-  })
-  inDeckDefaultWrapper.appendChild(inDeckDefaultInput);
-
-  const inDeckDefaultLabel = document.createElement("label");
-  inDeckDefaultLabel.htmlFor = "in-deck-default-input";
-  inDeckDefaultLabel.textContent = "Default for In Deck";
-  inDeckDefaultWrapper.appendChild(inDeckDefaultLabel);
-
-  presetControls.appendChild(inDeckDefaultWrapper);
-
-  const removeClassButton = document.createElement("button");
-  removeClassButton.innerHTML = "&nbsp;&nbsp;-&nbsp;&nbsp;";
-  removeClassButton.onclick = (e) => {
-    e.preventDefault();
-
-    classEntries.pop();
-
-    syncClassEntries();
-  };
-  presetControls.appendChild(removeClassButton);
-
-  const addClassButton = document.createElement("button");
-  addClassButton.innerHTML = "&nbsp;&nbsp;+&nbsp;&nbsp;";
-  addClassButton.onclick = (e) => {
-    e.preventDefault();
-
-    const i = classEntries.length;
-
-    classEntries.push({ amount: defaultAmountForIndex(i), label: defaultLabelForIndex(i) });
-    syncClassEntries();
-  };
-  presetControls.appendChild(addClassButton);
-
-  const classDefaultControlsWrapper = document.createElement("div");
-  presetControls.appendChild(classDefaultControlsWrapper);
-  const classTotalOutput = document.createElement("output");
-  presetControls.appendChild(classTotalOutput);
 
   const classControlsWrapper = document.createElement("div");
   classCalcControls.appendChild(classControlsWrapper);
