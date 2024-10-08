@@ -489,10 +489,77 @@ label {
 
   let classEntries = loadClassEntriesOrDefault();
 
-  let classElements = [];
+  let singleDrawCalculatorDefaults = {
+    elements: [],
+    previousElements: [],
+  };
+  const ClassDefaults = {
+    pushElement: (classDefaults, elementObj) => {
+      classDefaults.elements.push(elementObj);
+    },
+    resetElements: (classDefaults) => {
+      classDefaults.previousElements = classDefaults.elements;
+      classDefaults.elements = [];
+    },
+    labelForIndex: (classDefaults, i) => {
+      const label = classDefaults.elements[i]?.label?.value;
+
+      if (typeof label !== "string") {
+        console.error("Bad class default label at index " + i + ": " + label);
+      }
+
+      return label;
+    },
+    defaultValueForIndex: (classDefaults, i) => {
+      const value = parseInt(classDefaults.elements[i]?.defaultInput?.value);
+
+      if (isNaN(value)) {
+        console.error("Bad class default value at index " + i + ": " + value);
+        return 0;
+      }
+
+      return value;
+    },
+    previousLabelForIndex: (classDefaults, i) => {
+      const label = classDefaults.previousElements[i]?.label?.value;
+
+      if (typeof label !== "string") {
+        // Previous values being blank the first time is expected
+        if (classDefaults.previousElements.length) {
+          console.error("Bad previous class default label at index " + i + ": " + label);
+        }
+      }
+
+      return label;
+    },
+    previousDefaultValueForIndex: (classDefaults, i) => {
+      const value = parseInt(classDefaults.previousElements[i]?.defaultInput?.value);
+
+      if (isNaN(value)) {
+        // Previous values being blank the first time is expected
+        if (classDefaults.previousElements.length) {
+          console.error("Bad previous class default value at index " + i + ": " + value);
+        }
+        return 0;
+      }
+
+      return value;
+    },
+    moveUp: (classDefaults, i) => {
+      const tempElement = classDefaults.elements[i - 1];
+      classDefaults.elements[i - 1] = classDefaults.elements[i];
+      classDefaults.elements[i] = tempElement;
+    },
+    moveDown: (classDefaults, i) => {
+      const tempElement = classDefaults.elements[i + 1];
+      classDefaults.elements[i + 1] = classDefaults.elements[i];
+      classDefaults.elements[i] = tempElement;
+    },
+  };
+  let classCurrentElements = [];
   let drawnSinceReset = {}
 
-  const appendDefaultRow = ({parent, idSuffix, i, previousElements, classEntries, classElements, syncClassEntries, onSetLabel}) => {
+  const appendDefaultRow = ({parent, idSuffix, i, classEntries, classDefaults, syncClassEntries, onSetLabel}) => {
     const defaultWrapper = document.createElement("div");
 
     const defaultId = i + "-" + idSuffix;
@@ -500,7 +567,7 @@ label {
     const defaultInput = document.createElement("input");
     defaultInput.type = "number";
     defaultInput.id = defaultId;
-    defaultInput.value = previousElements[i]?.defaultInput?.value || classEntries[i].amount;
+    defaultInput.value = ClassDefaults.previousDefaultValueForIndex(classDefaults, i) || classEntries[i].amount;
 
     defaultWrapper.appendChild(defaultInput);
     defaultInput.addEventListener("change", (e) => {
@@ -523,7 +590,7 @@ label {
       }
     };
 
-    setLabel(previousElements[i]?.label?.value || classEntries[i].label);
+    setLabel(ClassDefaults.previousLabelForIndex(classDefaults, i) || classEntries[i].label);
     labelElement.addEventListener("input", (e) => {
       setLabel(labelElement.value);
       renderClassCalc();
@@ -553,12 +620,7 @@ label {
           classEntries[i - 1] = classEntries[i];
           classEntries[i] = tempEntry;
 
-          // Gotta swap classElements too, since the preveious values
-          // are read out of there.
-
-          const tempElement = classElements[i - 1];
-          classElements[i - 1] = classElements[i];
-          classElements[i] = tempElement;
+          ClassDefaults.moveUp(classDefaults, i);
 
           syncClassEntries();
         }
@@ -575,8 +637,6 @@ label {
       }
       defaultWrapper.appendChild(moveDownButton);
 
-      defaultWrapper.appendChild(moveDownButton);
-
       moveDownButton.addEventListener("click", (e) => {
         e.preventDefault();
         if (canMoveDown) {
@@ -584,12 +644,7 @@ label {
           classEntries[i + 1] = classEntries[i];
           classEntries[i] = tempEntry;
 
-          // Gotta swap classElements too, since the preveious values
-          // are read out of there.
-
-          const tempElement = classElements[i + 1];
-          classElements[i + 1] = classElements[i];
-          classElements[i] = tempElement;
+          ClassDefaults.moveDown(classDefaults, i);
 
           syncClassEntries();
         }
@@ -598,15 +653,13 @@ label {
 
     parent.appendChild(defaultWrapper);
 
-    return {
-      labelElement,
-      defaultInput,
-    }
+    ClassDefaults.pushElement(classDefaults, {label: labelElement, defaultInput});
   };
 
   const resetClassControls = () => {
-    let previousElements = classElements;
-    classElements = [];
+    let previousCurrentElements = classCurrentElements;
+    classCurrentElements = [];
+    ClassDefaults.resetElements(singleDrawCalculatorDefaults);
     classDefaultControlsWrapper.innerHTML = "";
     classControlsWrapper.innerHTML = "";
     drewButtonsWrapper.innerHTML = "";
@@ -620,7 +673,7 @@ label {
       const input = document.createElement("input");
       input.type = "number";
       input.id = id;
-      input.value = previousElements[i]?.input?.value || classEntries[i].amount;
+      input.value = previousCurrentElements[i]?.input?.value || classEntries[i].amount;
       wrapper.appendChild(input);
 
       const classLabelElement = document.createElement("label");
@@ -636,23 +689,18 @@ label {
         classLabelElement.textContent = label;
       };
 
-      const defaultRow = appendDefaultRow({
+      appendDefaultRow({
         parent: classDefaultControlsWrapper,
         idSuffix: "default-input",
         i,
-        previousElements,
         classEntries,
-        classElements,
+        classDefaults: singleDrawCalculatorDefaults,
         syncClassEntries,
         onSetLabel
       });
 
-      let defaultValueNumber = parseInt(defaultRow.defaultInput.value, 10);
-      if (!isNaN(defaultValueNumber)) {
-        classMemeberTotal += defaultValueNumber;
-      } else {
-        console.error("defaultValueNumber was NaN!")
-      }
+      let defaultValueNumber = ClassDefaults.defaultValueForIndex(singleDrawCalculatorDefaults, i);
+      classMemeberTotal += defaultValueNumber;
 
       drewButtonsWrapper.appendChild(drew);
       drew.addEventListener("click", (e) => {
@@ -673,8 +721,7 @@ label {
         renderClassCalc()
       });
 
-      // TODO separate the input and the other elements into separate arrays
-      classElements.push({input, label: defaultRow.labelElement, defaultInput: defaultRow.defaultInput});
+      classCurrentElements.push({input});
     }
 
     let classTotalOutputString = "";
@@ -725,28 +772,28 @@ label {
     classCalcOutput.textContent = "";
 
     for (let i = 0; i < classEntries.length; i += 1) {
-      const {input, label} = classElements[i];
+      const {input} = classCurrentElements[i];
+      const label = ClassDefaults.labelForIndex(singleDrawCalculatorDefaults, i);
 
       let successesInPop = parseInt(input.value, 10);
       if (isNaN(successesInPop)) {
         successesInPop = 0;
       }
 
-      classCalcOutput.textContent += `${label.value}: ${formatPercent(Hypergeometric.pmf(popMax, successesInPop, 1, 1))}%\n`;
+      classCalcOutput.textContent += `${label}: ${formatPercent(Hypergeometric.pmf(popMax, successesInPop, 1, 1))}%\n`;
     }
 
     classCalcOutput.textContent += "\nDrawn Counts\n";
 
     for (let i = 0; i < classEntries.length; i += 1) {
-      const {label} = classElements[i];
+      const label = ClassDefaults.labelForIndex(singleDrawCalculatorDefaults, i);
 
-      const drawnAmount = drawnSinceReset[label.value];
+      const drawnAmount = drawnSinceReset[label];
 
       if (drawnAmount) {
-        classCalcOutput.textContent += `${label.value}: ${drawnAmount}\n`;
+        classCalcOutput.textContent += `${label}: ${drawnAmount}\n`;
       }
     }
-
   };
 
   classCalcControls.addEventListener("change", renderClassCalc);
@@ -764,9 +811,11 @@ label {
     inDeckInput.value = inDeckDefaultInput.value;
 
     for (let i = 0; i < classEntries.length; i += 1) {
-      const {input, defaultInput} = classElements[i];
+      const {input} = classCurrentElements[i];
 
-      input.value = defaultInput.value;
+      const defaultValue = ClassDefaults.defaultValueForIndex(singleDrawCalculatorDefaults, i);
+
+      input.value = defaultValue;
     }
 
     renderClassCalc();
