@@ -366,7 +366,7 @@ label {
     classEntriesListeners.push(listener);
   }
 
-  const renderClassEntriesChamges = () => {
+  const renderClassEntriesChanges = () => {
     for (listener of classEntriesListeners) {
       listener();
     }
@@ -385,7 +385,7 @@ label {
     window.localStorage.setItem(CLASS_ENTRIES_KEYS[index], JSON.stringify(classEntries))
     window.localStorage.setItem(CLASS_INDEX_KEY, index);
 
-    render();
+    renderClassEntriesChanges();
   };
 
   const loadClassEntriesOrDefault = () => {
@@ -414,113 +414,278 @@ label {
 
   const classCalcControls = document.createElement("form");
 
-  const presetControls = document.createElement("div");
-  presetControls.style.border = "solid #888";
+  const ClassDefaults = {
+    pushElement: (classDefaults, elementObj) => {
+      classDefaults.elements.push(elementObj);
+    },
+    deckValue: (classDefaults) => {
+      return classDefaults.inDeckDefaultInput.value;
+    },
+    appendDefaultRow: ({parent, idSuffix, i, classEntries, classDefaults, syncClassEntries}) => {
+      const defaultWrapper = document.createElement("div");
 
-  const presetHeading = document.createElement("label");
-  presetHeading.textContent = "Preset Controls"
-  presetControls.appendChild(presetHeading);
+      const defaultId = i + "-" + idSuffix;
 
-  const inDeckDefaultWrapper = document.createElement("div");
+      const defaultInput = document.createElement("input");
+      defaultInput.type = "number";
+      defaultInput.id = defaultId;
+      defaultInput.value = ClassDefaults.previousDefaultValueForIndex(classDefaults, i) || classEntries[i].amount;
 
-  const inDeckDefaultInput = document.createElement("input");
-  inDeckDefaultInput.type = "number";
-  inDeckDefaultInput.id = "in-deck-default-input";
-  inDeckDefaultInput.value = POPULATION_DEFAULT;
-  inDeckDefaultInput.addEventListener("change", () => {
-    resetClassControls();
-  })
-  inDeckDefaultWrapper.appendChild(inDeckDefaultInput);
+      defaultWrapper.appendChild(defaultInput);
+      defaultInput.addEventListener("change", (e) => {
+        if (i < classEntries.length) {
+          let newValue = parseInt(defaultInput.value, 10);
+          if (!isNaN(newValue)) {
+            classEntries[i].amount = newValue;
+            syncClassEntries();
+          }
+        }
+      });
+      const labelElement = document.createElement("input");
+      defaultWrapper.appendChild(labelElement);
 
-  const inDeckDefaultLabel = document.createElement("label");
-  inDeckDefaultLabel.htmlFor = "in-deck-default-input";
-  inDeckDefaultLabel.textContent = "Default for In Deck";
-  inDeckDefaultWrapper.appendChild(inDeckDefaultLabel);
-
-  presetControls.appendChild(inDeckDefaultWrapper);
-
-  const removeClassButton = document.createElement("button");
-  removeClassButton.innerHTML = "&nbsp;&nbsp;-&nbsp;&nbsp;";
-  removeClassButton.onclick = (e) => {
-    e.preventDefault();
-
-    classEntries.pop();
-
-    syncClassEntries();
-  };
-  presetControls.appendChild(removeClassButton);
-
-  const addClassButton = document.createElement("button");
-  addClassButton.innerHTML = "&nbsp;&nbsp;+&nbsp;&nbsp;";
-  addClassButton.onclick = (e) => {
-    e.preventDefault();
-
-    const i = classEntries.length;
-
-    classEntries.push({ amount: defaultAmountForIndex(i), label: defaultLabelForIndex(i) });
-    syncClassEntries();
-  };
-  presetControls.appendChild(addClassButton);
-
-  const classDefaultControlsWrapper = document.createElement("div");
-  presetControls.appendChild(classDefaultControlsWrapper);
-  const classTotalOutput = document.createElement("output");
-  presetControls.appendChild(classTotalOutput);
-
-  classCalcControls.appendChild(presetControls);
-
-  const inDeckInput = document.createElement("input");
-  inDeckInput.type = "number";
-  inDeckInput.id = "in-deck-input";
-  inDeckInput.value = POPULATION_DEFAULT;
-  classCalcControls.appendChild(inDeckInput);
-
-  const inDeckLabel = document.createElement("label");
-  inDeckLabel.htmlFor = "in-deck-input";
-  inDeckLabel.innerHTML = "In Deck";
-  classCalcControls.appendChild(inDeckLabel);
-
-  const resetClassControls = () => {
-    let previousCurrentElements = classCurrentElements;
-    classCurrentElements = [];
-    ClassDefaults.resetElements(singleDrawCalculatorDefaults);
-    classDefaultControlsWrapper.innerHTML = "";
-    classControlsWrapper.innerHTML = "";
-    drewButtonsWrapper.innerHTML = "";
-
-    let classMemeberTotal = 0;
-    for (let i = 0; i < classEntries.length; i += 1) {
-      appendDefaultRow({
-        parent: classDefaultControlsWrapper,
-        idSuffix: "default-input",
-        i,
-        classEntries,
-        classDefaults: singleDrawCalculatorDefaults,
-        syncClassEntries,
+      labelElement.value = ClassDefaults.previousLabelForIndex(classDefaults, i) || classEntries[i].label;
+      labelElement.addEventListener("input", (e) => {
+        renderClassCalc();
+      });
+      labelElement.addEventListener("change", (e) => {
+        if (i < classEntries.length) {
+          classEntries[i].label = labelElement.value;
+          syncClassEntries();
+        }
       });
 
-      let defaultValueNumber = ClassDefaults.defaultValueForIndex(singleDrawCalculatorDefaults, i);
-      classMemeberTotal += defaultValueNumber;
+      const moveButtonWidth = "24px";
 
-      let classTotalOutputString = "";
-      classTotalOutputString += classMemeberTotal;
-      classTotalOutputString += " total class member(s). ";
+      const canMoveUp = i > 0;
+      const canMoveDown = i < classEntries.length - 1;
 
-      const currentDefaultInDeckValue = parseInt(inDeckDefaultInput.value, 10);
-      if (isNaN(currentDefaultInDeckValue)) {
-        console.error("currentDefaultInDeckValue was NaN")
-      } else {
-        if (currentDefaultInDeckValue === classMemeberTotal) {
-          classTotalOutputString += "All cards in the deck accounted for.";
-        } else if (currentDefaultInDeckValue > classMemeberTotal) {
-          classTotalOutputString += "Some cards in the deck unaccounted for.";
+      if (canMoveUp) {
+        const moveUpButton = document.createElement("button");
+        moveUpButton.textContent = "⌃";
+        moveUpButton.style.width = moveButtonWidth;
+        defaultWrapper.appendChild(moveUpButton);
+
+        moveUpButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (canMoveUp) {
+            const tempEntry = classEntries[i - 1];
+            classEntries[i - 1] = classEntries[i];
+            classEntries[i] = tempEntry;
+
+            ClassDefaults.moveUp(classDefaults, i);
+
+            syncClassEntries();
+          }
+        });
+      }
+
+      if (canMoveDown) {
+        const moveDownButton = document.createElement("button");
+        moveDownButton.textContent = "⌄";
+        moveDownButton.style.width = moveButtonWidth;
+        if (!canMoveUp) {
+          // Add spacing to replace the absent move up button
+          moveDownButton.style.marginLeft = moveButtonWidth;
+        }
+        defaultWrapper.appendChild(moveDownButton);
+
+        moveDownButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (canMoveDown) {
+            const tempEntry = classEntries[i + 1];
+            classEntries[i + 1] = classEntries[i];
+            classEntries[i] = tempEntry;
+
+            ClassDefaults.moveDown(classDefaults, i);
+
+            syncClassEntries();
+          }
+        });
+      }
+
+      parent.appendChild(defaultWrapper);
+
+      ClassDefaults.pushElement(classDefaults, {label: labelElement, defaultInput});
+    },
+    reset: (classDefaults) => {
+      classDefaults.previousElements = classDefaults.elements;
+      classDefaults.elements = [];
+
+      classDefaults.classDefaultControlsWrapper.innerHTML = "";
+
+      let classMemeberTotal = 0;
+      for (let i = 0; i < classEntries.length; i += 1) {
+        ClassDefaults.appendDefaultRow({
+          parent: classDefaults.classDefaultControlsWrapper,
+          idSuffix: "default-input",
+          i,
+          classEntries,
+          classDefaults,
+          syncClassEntries,
+        });
+
+        let defaultValueNumber = ClassDefaults.defaultValueForIndex(classDefaults, i);
+        classMemeberTotal += defaultValueNumber;
+
+        let classTotalOutputString = "";
+        classTotalOutputString += classMemeberTotal;
+        classTotalOutputString += " total class member(s). ";
+
+        const currentDefaultInDeckValue = parseInt(classDefaults.inDeckDefaultInput.value, 10);
+        if (isNaN(currentDefaultInDeckValue)) {
+          console.error("currentDefaultInDeckValue was NaN")
         } else {
-          classTotalOutputString += "That's more than all the cards in the deck!";
+          if (currentDefaultInDeckValue === classMemeberTotal) {
+            classTotalOutputString += "All cards in the deck accounted for.";
+          } else if (currentDefaultInDeckValue > classMemeberTotal) {
+            classTotalOutputString += "Some cards in the deck unaccounted for.";
+          } else {
+            classTotalOutputString += "That's more than all the cards in the deck!";
+          }
+        }
+
+        classDefaults.classTotalOutput.textContent = classTotalOutputString;
+      }
+    },
+    labelForIndex: (classDefaults, i) => {
+      const label = classDefaults.elements[i]?.label?.value;
+
+      if (typeof label !== "string") {
+        console.error("Bad class default label at index " + i + ": " + label);
+      }
+
+      return label;
+    },
+    defaultValueForIndex: (classDefaults, i) => {
+      const value = parseInt(classDefaults.elements[i]?.defaultInput?.value);
+
+      if (isNaN(value)) {
+        console.error("Bad class default value at index " + i + ": " + value);
+        return 0;
+      }
+
+      return value;
+    },
+    previousLabelForIndex: (classDefaults, i) => {
+      const label = classDefaults.previousElements[i]?.label?.value;
+
+      if (typeof label !== "string") {
+        if (
+          // Previous values being blank the first time is expected
+          classDefaults.previousElements.length
+          // Checking for one past the last element is expected
+          && i > classDefaults.previousElements.length
+        ) {
+          console.error("Bad previous class default label at index " + i + ": " + label);
         }
       }
 
-      classTotalOutput.textContent = classTotalOutputString;
-    }
+      return label;
+    },
+    previousDefaultValueForIndex: (classDefaults, i) => {
+      const value = parseInt(classDefaults.previousElements[i]?.defaultInput?.value);
+
+      if (isNaN(value)) {
+        if (
+          // Previous values being blank the first time is expected
+          classDefaults.previousElements.length
+          // Checking for one past the last element is expected
+          && i > classDefaults.previousElements.length
+        ) {
+          console.error("Bad previous class default value at index " + i + ": " + value);
+        }
+        return 0;
+      }
+
+      return value;
+    },
+    moveUp: (classDefaults, i) => {
+      const tempElement = classDefaults.elements[i - 1];
+      classDefaults.elements[i - 1] = classDefaults.elements[i];
+      classDefaults.elements[i] = tempElement;
+    },
+    moveDown: (classDefaults, i) => {
+      const tempElement = classDefaults.elements[i + 1];
+      classDefaults.elements[i + 1] = classDefaults.elements[i];
+      classDefaults.elements[i] = tempElement;
+    },
+  };
+
+  const appendClassControls = (parent) => {
+    const presetControls = document.createElement("div");
+    presetControls.style.border = "solid #888";
+
+    const presetHeading = document.createElement("label");
+    presetHeading.textContent = "Preset Controls"
+    presetControls.appendChild(presetHeading);
+
+    const inDeckDefaultWrapper = document.createElement("div");
+
+    const inDeckDefaultInput = document.createElement("input");
+    inDeckDefaultInput.type = "number";
+    inDeckDefaultInput.id = "in-deck-default-input";
+    inDeckDefaultInput.value = POPULATION_DEFAULT;
+    inDeckDefaultInput.addEventListener("change", () => {
+      resetClassControls();
+    })
+    inDeckDefaultWrapper.appendChild(inDeckDefaultInput);
+
+    const inDeckDefaultLabel = document.createElement("label");
+    inDeckDefaultLabel.htmlFor = "in-deck-default-input";
+    inDeckDefaultLabel.textContent = "Default for In Deck";
+    inDeckDefaultWrapper.appendChild(inDeckDefaultLabel);
+
+    presetControls.appendChild(inDeckDefaultWrapper);
+
+    const removeClassButton = document.createElement("button");
+    removeClassButton.innerHTML = "&nbsp;&nbsp;-&nbsp;&nbsp;";
+    removeClassButton.onclick = (e) => {
+      e.preventDefault();
+
+      classEntries.pop();
+
+      syncClassEntries();
+    };
+    presetControls.appendChild(removeClassButton);
+
+    const addClassButton = document.createElement("button");
+    addClassButton.innerHTML = "&nbsp;&nbsp;+&nbsp;&nbsp;";
+    addClassButton.onclick = (e) => {
+      e.preventDefault();
+
+      const i = classEntries.length;
+
+      classEntries.push({ amount: defaultAmountForIndex(i), label: defaultLabelForIndex(i) });
+      syncClassEntries();
+    };
+    presetControls.appendChild(addClassButton);
+
+    const classDefaultControlsWrapper = document.createElement("div");
+    presetControls.appendChild(classDefaultControlsWrapper);
+    const classTotalOutput = document.createElement("output");
+    presetControls.appendChild(classTotalOutput);
+
+    parent.appendChild(presetControls);
+
+    return {
+      elements: [],
+      previousElements: [],
+      classDefaultControlsWrapper,
+      inDeckDefaultInput,
+      classTotalOutput,
+    };
+  };
+
+  let singleDrawCalculatorDefaults = appendClassControls(classCalcControls);
+
+  const resetClassControls = () => {
+    ClassDefaults.reset(singleDrawCalculatorDefaults);
+
+    let previousCurrentElements = classCurrentElements;
+    classCurrentElements = [];
+    classControlsWrapper.innerHTML = "";
+    drewButtonsWrapper.innerHTML = "";
 
     for (let i = 0; i < classEntries.length; i += 1) {
       const wrapper = document.createElement("div");
@@ -569,6 +734,17 @@ label {
     }
   };
 
+  const inDeckInput = document.createElement("input");
+  inDeckInput.type = "number";
+  inDeckInput.id = "in-deck-input";
+  inDeckInput.value = POPULATION_DEFAULT;
+  classCalcControls.appendChild(inDeckInput);
+
+  const inDeckLabel = document.createElement("label");
+  inDeckLabel.htmlFor = "in-deck-input";
+  inDeckLabel.innerHTML = "In Deck";
+  classCalcControls.appendChild(inDeckLabel);
+
   const classControlsWrapper = document.createElement("div");
   classCalcControls.appendChild(classControlsWrapper);
   const drewButtonsWrapper = document.createElement("div");
@@ -592,164 +768,8 @@ label {
   };
 
   let classEntries = loadClassEntriesOrDefault();
-
-  let singleDrawCalculatorDefaults = {
-    elements: [],
-    previousElements: [],
-  };
-  const ClassDefaults = {
-    pushElement: (classDefaults, elementObj) => {
-      classDefaults.elements.push(elementObj);
-    },
-    resetElements: (classDefaults) => {
-      classDefaults.previousElements = classDefaults.elements;
-      classDefaults.elements = [];
-    },
-    labelForIndex: (classDefaults, i) => {
-      const label = classDefaults.elements[i]?.label?.value;
-
-      if (typeof label !== "string") {
-        console.error("Bad class default label at index " + i + ": " + label);
-      }
-
-      return label;
-    },
-    defaultValueForIndex: (classDefaults, i) => {
-      const value = parseInt(classDefaults.elements[i]?.defaultInput?.value);
-
-      if (isNaN(value)) {
-        console.error("Bad class default value at index " + i + ": " + value);
-        return 0;
-      }
-
-      return value;
-    },
-    previousLabelForIndex: (classDefaults, i) => {
-      const label = classDefaults.previousElements[i]?.label?.value;
-
-      if (typeof label !== "string") {
-        // Previous values being blank the first time is expected
-        if (classDefaults.previousElements.length) {
-          console.error("Bad previous class default label at index " + i + ": " + label);
-        }
-      }
-
-      return label;
-    },
-    previousDefaultValueForIndex: (classDefaults, i) => {
-      const value = parseInt(classDefaults.previousElements[i]?.defaultInput?.value);
-
-      if (isNaN(value)) {
-        // Previous values being blank the first time is expected
-        if (classDefaults.previousElements.length) {
-          console.error("Bad previous class default value at index " + i + ": " + value);
-        }
-        return 0;
-      }
-
-      return value;
-    },
-    moveUp: (classDefaults, i) => {
-      const tempElement = classDefaults.elements[i - 1];
-      classDefaults.elements[i - 1] = classDefaults.elements[i];
-      classDefaults.elements[i] = tempElement;
-    },
-    moveDown: (classDefaults, i) => {
-      const tempElement = classDefaults.elements[i + 1];
-      classDefaults.elements[i + 1] = classDefaults.elements[i];
-      classDefaults.elements[i] = tempElement;
-    },
-  };
   let classCurrentElements = [];
   let drawnSinceReset = {}
-
-  const appendDefaultRow = ({parent, idSuffix, i, classEntries, classDefaults, syncClassEntries}) => {
-    const defaultWrapper = document.createElement("div");
-
-    const defaultId = i + "-" + idSuffix;
-
-    const defaultInput = document.createElement("input");
-    defaultInput.type = "number";
-    defaultInput.id = defaultId;
-    defaultInput.value = ClassDefaults.previousDefaultValueForIndex(classDefaults, i) || classEntries[i].amount;
-
-    defaultWrapper.appendChild(defaultInput);
-    defaultInput.addEventListener("change", (e) => {
-      if (i < classEntries.length) {
-        let newValue = parseInt(defaultInput.value, 10);
-        if (!isNaN(newValue)) {
-          classEntries[i].amount = newValue;
-          syncClassEntries();
-        }
-      }
-    });
-    const labelElement = document.createElement("input");
-    defaultWrapper.appendChild(labelElement);
-
-    labelElement.value = ClassDefaults.previousLabelForIndex(classDefaults, i) || classEntries[i].label;
-    labelElement.addEventListener("input", (e) => {
-      renderClassCalc();
-    });
-    labelElement.addEventListener("change", (e) => {
-      if (i < classEntries.length) {
-        classEntries[i].label = labelElement.value;
-        syncClassEntries();
-      }
-    });
-
-    const moveButtonWidth = "24px";
-
-    const canMoveUp = i > 0;
-    const canMoveDown = i < classEntries.length - 1;
-
-    if (canMoveUp) {
-      const moveUpButton = document.createElement("button");
-      moveUpButton.textContent = "⌃";
-      moveUpButton.style.width = moveButtonWidth;
-      defaultWrapper.appendChild(moveUpButton);
-
-      moveUpButton.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (canMoveUp) {
-          const tempEntry = classEntries[i - 1];
-          classEntries[i - 1] = classEntries[i];
-          classEntries[i] = tempEntry;
-
-          ClassDefaults.moveUp(classDefaults, i);
-
-          syncClassEntries();
-        }
-      });
-    }
-
-    if (canMoveDown) {
-      const moveDownButton = document.createElement("button");
-      moveDownButton.textContent = "⌄";
-      moveDownButton.style.width = moveButtonWidth;
-      if (!canMoveUp) {
-        // Add spacing to replace the absent move up button
-        moveDownButton.style.marginLeft = moveButtonWidth;
-      }
-      defaultWrapper.appendChild(moveDownButton);
-
-      moveDownButton.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (canMoveDown) {
-          const tempEntry = classEntries[i + 1];
-          classEntries[i + 1] = classEntries[i];
-          classEntries[i] = tempEntry;
-
-          ClassDefaults.moveDown(classDefaults, i);
-
-          syncClassEntries();
-        }
-      });
-    }
-
-    parent.appendChild(defaultWrapper);
-
-    ClassDefaults.pushElement(classDefaults, {label: labelElement, defaultInput});
-  };
 
   const classCalcOutput = document.createElement("pre");
 
@@ -814,7 +834,7 @@ label {
   classCalcReset.addEventListener("click", (e) => {
     drawnSinceReset = {};
 
-    inDeckInput.value = inDeckDefaultInput.value;
+    inDeckInput.value = ClassDefaults.deckValue(singleDrawCalculatorDefaults);
 
     for (let i = 0; i < classEntries.length; i += 1) {
       const {input} = classCurrentElements[i];
@@ -870,7 +890,7 @@ label {
     addClassEntriesListener(resetUniqueDrawCalc);
   })();
 
-  renderClassEntriesChamges();
+  renderClassEntriesChanges();
 </script>
 
 </html>
