@@ -360,6 +360,18 @@ label {
     return index
   };
 
+  let classEntriesListeners = [];
+
+  const addClassEntriesListener = (listener) => {
+    classEntriesListeners.push(listener);
+  }
+
+  const renderClassEntriesChamges = () => {
+    for (listener of classEntriesListeners) {
+      listener();
+    }
+  };
+
   const syncClassEntries = () => {
     //
     // Save to local storage
@@ -373,7 +385,7 @@ label {
     window.localStorage.setItem(CLASS_ENTRIES_KEYS[index], JSON.stringify(classEntries))
     window.localStorage.setItem(CLASS_INDEX_KEY, index);
 
-    resetClassControls();
+    render();
   };
 
   const loadClassEntriesOrDefault = () => {
@@ -478,6 +490,39 @@ label {
 
     let classMemeberTotal = 0;
     for (let i = 0; i < classEntries.length; i += 1) {
+      appendDefaultRow({
+        parent: classDefaultControlsWrapper,
+        idSuffix: "default-input",
+        i,
+        classEntries,
+        classDefaults: singleDrawCalculatorDefaults,
+        syncClassEntries,
+      });
+
+      let defaultValueNumber = ClassDefaults.defaultValueForIndex(singleDrawCalculatorDefaults, i);
+      classMemeberTotal += defaultValueNumber;
+
+      let classTotalOutputString = "";
+      classTotalOutputString += classMemeberTotal;
+      classTotalOutputString += " total class member(s). ";
+
+      const currentDefaultInDeckValue = parseInt(inDeckDefaultInput.value, 10);
+      if (isNaN(currentDefaultInDeckValue)) {
+        console.error("currentDefaultInDeckValue was NaN")
+      } else {
+        if (currentDefaultInDeckValue === classMemeberTotal) {
+          classTotalOutputString += "All cards in the deck accounted for.";
+        } else if (currentDefaultInDeckValue > classMemeberTotal) {
+          classTotalOutputString += "Some cards in the deck unaccounted for.";
+        } else {
+          classTotalOutputString += "That's more than all the cards in the deck!";
+        }
+      }
+
+      classTotalOutput.textContent = classTotalOutputString;
+    }
+
+    for (let i = 0; i < classEntries.length; i += 1) {
       const wrapper = document.createElement("div");
 
       const id = i + "-class-input";
@@ -496,26 +541,10 @@ label {
 
       const drew = document.createElement("button");
 
-      // TODO instead of callbacks like this, re-render the calculator
-      // specific views when the stuff changes, by calling the
-      // ClassDefaults read methods
-      const onSetLabel = (label) => {
-        drew.textContent = "drew " + label;
-        classLabelElement.textContent = label;
-      };
+      const label = ClassDefaults.labelForIndex(singleDrawCalculatorDefaults, i);
 
-      appendDefaultRow({
-        parent: classDefaultControlsWrapper,
-        idSuffix: "default-input",
-        i,
-        classEntries,
-        classDefaults: singleDrawCalculatorDefaults,
-        syncClassEntries,
-        onSetLabel
-      });
-
-      let defaultValueNumber = ClassDefaults.defaultValueForIndex(singleDrawCalculatorDefaults, i);
-      classMemeberTotal += defaultValueNumber;
+      drew.textContent = "drew " + label;
+      classLabelElement.textContent = label;
 
       drewButtonsWrapper.appendChild(drew);
       drew.addEventListener("click", (e) => {
@@ -533,30 +562,11 @@ label {
           }
         }
 
-        renderClassCalc()
+        renderClassCalc();
       });
 
       classCurrentElements.push({input});
     }
-
-    let classTotalOutputString = "";
-    classTotalOutputString += classMemeberTotal;
-    classTotalOutputString += " total class member(s). ";
-
-    const currentDefaultInDeckValue = parseInt(inDeckDefaultInput.value, 10);
-    if (isNaN(currentDefaultInDeckValue)) {
-      console.error("currentDefaultInDeckValue was NaN")
-    } else {
-      if (currentDefaultInDeckValue === classMemeberTotal) {
-        classTotalOutputString += "All cards in the deck accounted for.";
-      } else if (currentDefaultInDeckValue > classMemeberTotal) {
-        classTotalOutputString += "Some cards in the deck unaccounted for.";
-      } else {
-        classTotalOutputString += "That's more than all the cards in the deck!";
-      }
-    }
-
-    classTotalOutput.textContent = classTotalOutputString;
   };
 
   const classControlsWrapper = document.createElement("div");
@@ -653,7 +663,7 @@ label {
   let classCurrentElements = [];
   let drawnSinceReset = {}
 
-  const appendDefaultRow = ({parent, idSuffix, i, classEntries, classDefaults, syncClassEntries, onSetLabel}) => {
+  const appendDefaultRow = ({parent, idSuffix, i, classEntries, classDefaults, syncClassEntries}) => {
     const defaultWrapper = document.createElement("div");
 
     const defaultId = i + "-" + idSuffix;
@@ -676,17 +686,8 @@ label {
     const labelElement = document.createElement("input");
     defaultWrapper.appendChild(labelElement);
 
-    const setLabel = (label) => {
-      labelElement.value = label;
-
-      if (onSetLabel) {
-        onSetLabel(label);
-      }
-    };
-
-    setLabel(ClassDefaults.previousLabelForIndex(classDefaults, i) || classEntries[i].label);
+    labelElement.value = ClassDefaults.previousLabelForIndex(classDefaults, i) || classEntries[i].label;
     labelElement.addEventListener("input", (e) => {
-      setLabel(labelElement.value);
       renderClassCalc();
     });
     labelElement.addEventListener("change", (e) => {
@@ -749,8 +750,6 @@ label {
 
     ClassDefaults.pushElement(classDefaults, {label: labelElement, defaultInput});
   };
-
-  resetClassControls();
 
   const classCalcOutput = document.createElement("pre");
 
@@ -829,7 +828,7 @@ label {
   });
   classCalcDetails.appendChild(classCalcReset);
 
-  renderClassCalc();
+  addClassEntriesListener(resetClassControls);
 
   //
   // Setup Unique Draws Calculator
@@ -863,8 +862,15 @@ label {
     const uniqueDetails = appendDetails(root, "Unique Draws Calculator");
 
     // const classControls = appendClassControls(...);
+
+    const resetUniqueDrawCalc = () => {
+
+    }
+
+    addClassEntriesListener(resetUniqueDrawCalc);
   })();
 
+  renderClassEntriesChamges();
 </script>
 
 </html>
