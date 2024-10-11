@@ -589,6 +589,18 @@ label {
       classDefaults.elements[i + 1] = classDefaults.elements[i];
       classDefaults.elements[i] = tempElement;
     },
+    getClassCounts: (classDefaults) => {
+      const output = [];
+      for (let i = 0; i < classDefaults.elements.length; i += 1) {
+        const defaultValue = ClassDefaults.defaultValueForIndex(classDefaults, i)
+
+        if (defaultValue === 0) { continue; }
+
+        output.push(defaultValue);
+      }
+
+      return output;
+    },
   };
 
   const appendClassControls = (parent, idSuffix) => {
@@ -650,7 +662,6 @@ label {
     return {
       idSuffix,
       elements: [],
-      previousElements: [],
       classDefaultControlsWrapper,
       inDeckDefaultInput,
       classTotalOutput,
@@ -848,6 +859,7 @@ label {
     //      extract classDefaultControlsWrapper setup into a reuseable function, with its own state ✔
     //        Maybe it should load the classes from the same localstorage though? Might want to add selecting controls now?
     //      use that to add a separate class editor for the unique draws calculator
+    //        So we can read the default out of the ClassDefaults instance. Bascially we can to pass a copy of the current class elements
     //    Write the naive, slow, but clearly correct version of the calculation function and see if it's actually too slow for our use case
     //      If it's fast enough, ship it and move on
     //    Add a unit test file, copy the slow verison in there, write a test that checks the two copies are the same, on small but non-trivial cases
@@ -866,8 +878,23 @@ label {
       "unique-draw-default"
     );
 
+    const output = document.createElement("output");
+
     const resetUniqueDrawCalc = () => {
       ClassDefaults.reset(classControls);
+
+      output.textContent = "";
+
+      // TODO add UI to set this
+      const drawCount = 7;
+
+      const uniqueDraws = Hypergeometric.uniqueDraws(
+        ClassDefaults.getClassCounts(classControls),
+        drawCount
+      );
+      output.textContent = `There are ${uniqueDraws} unique draw${uniqueDraws === 1? "" : "s"} of ${drawCount} card${drawCount === 1? "" : "s"} from this deck`;
+
+      uniqueDetails.appendChild(output);
     }
 
     addClassEntriesListener(resetUniqueDrawCalc);
