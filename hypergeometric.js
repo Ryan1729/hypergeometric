@@ -48,10 +48,10 @@ var Hypergeometric = (function () {
         let total = 0;
         for (let i = 0; i < classCounts.length; i += 1) {
             const afterDraw = []
-            for (let j = 0; j < classCounts.length; j += 1) {
+            for (let j = i; j < classCounts.length; j += 1) {
                 let count = classCounts[j];
 
-                if (i == j) {
+                if (i === j) {
                     count -= 1;
                 }
 
