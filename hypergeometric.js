@@ -36,31 +36,39 @@ var Hypergeometric = (function () {
     };
 
     const uniqueDraws = (classCounts, drawCount) => {
-        if (drawCount <= 0) {
-            return 1;
-        }
+        // TODO Optimize
 
-        if (drawCount === 1) {
-            return classCounts.length;
-        }
+        const stack = []
 
-        // TODO Probably a faster way to do this, but this way seems clearly correct, so would work to benchmark a faster solution against
+        stack.push([classCounts, drawCount]);
+
         let total = 0;
-        for (let i = 0; i < classCounts.length; i += 1) {
-            const afterDraw = []
-            for (let j = i; j < classCounts.length; j += 1) {
-                let count = classCounts[j];
 
-                if (i === j) {
-                    count -= 1;
-                }
+        while (stack.length > 0) {
+            const [currentCounts, currentDrawCount] = stack.pop();
 
-                if (count > 0) {
-                    afterDraw.push(count);
+            if (currentDrawCount <= 0) {
+                total += 1;
+            } else if (currentDrawCount === 1) {
+                total += currentCounts.length;
+            } else {
+                for (let i = 0; i < currentCounts.length; i += 1) {
+                    const afterDraw = []
+                    for (let j = i; j < currentCounts.length; j += 1) {
+                        let count = currentCounts[j];
+
+                        if (i === j) {
+                            count -= 1;
+                        }
+
+                        if (count > 0) {
+                            afterDraw.push(count);
+                        }
+                    }
+
+                    stack.push([afterDraw, currentDrawCount - 1]);
                 }
             }
-
-            total += uniqueDraws(afterDraw, drawCount - 1);
         }
 
         return total;
