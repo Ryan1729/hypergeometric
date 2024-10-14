@@ -35,41 +35,42 @@ var Hypergeometric = (function () {
         return Number(PMF_SCALE_UP * (choose(K, k) * choose(N - K, n - k)) / choose(N, n)) / PMF_SCALE_DOWN;
     };
 
+    const uniqueDrawsMemo = {}
+
     const uniqueDraws = (classCounts, drawCount) => {
-        // TODO Optimize
+        if (drawCount <= 0) {
+            return 1;
+        }
 
-        const stack = []
+        if (drawCount === 1) {
+            return classCounts.length;
+        }
 
-        stack.push([classCounts, drawCount]);
+        const key = JSON.stringify([classCounts, drawCount]);
+
+        if (uniqueDrawsMemo[key]) {
+            return uniqueDrawsMemo[key];
+        }
 
         let total = 0;
+        for (let i = 0; i < classCounts.length; i += 1) {
+            const afterDraw = []
+            for (let j = i; j < classCounts.length; j += 1) {
+                let count = classCounts[j];
 
-        while (stack.length > 0) {
-            const [currentCounts, currentDrawCount] = stack.pop();
+                if (i === j) {
+                    count -= 1;
+                }
 
-            if (currentDrawCount <= 0) {
-                total += 1;
-            } else if (currentDrawCount === 1) {
-                total += currentCounts.length;
-            } else {
-                for (let i = 0; i < currentCounts.length; i += 1) {
-                    const afterDraw = []
-                    for (let j = i; j < currentCounts.length; j += 1) {
-                        let count = currentCounts[j];
-
-                        if (i === j) {
-                            count -= 1;
-                        }
-
-                        if (count > 0) {
-                            afterDraw.push(count);
-                        }
-                    }
-
-                    stack.push([afterDraw, currentDrawCount - 1]);
+                if (count > 0) {
+                    afterDraw.push(count);
                 }
             }
+
+            total += uniqueDraws(afterDraw, drawCount - 1);
         }
+
+        uniqueDrawsMemo[key] = total;
 
         return total;
     };
