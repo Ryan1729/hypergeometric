@@ -104,6 +104,38 @@ const isNormalEnoughNumber = (n) => {
 
 // tests
 
+const SLOT_SIZE_EXPECTATIONS = [
+    // classCounts, drawCount, expected
+    [           [],         0,        1],
+    [           [],         1,        1],
+    [          [1],         1,        1],
+    [       [1, 1],         1,        1],
+    [       [1, 2],         1,        2],
+    [       [2, 1],         1,        2],
+    [       [2, 2],         2,        2],
+    [       [3, 3],         2,        2],
+    [       [3, 3],         3,        2],
+    [    [1, 2, 3],         2,        2],
+    [ range(1, 10),         2,        4],
+    [ range(1, 10),         7,        4],
+    [repeat(1, 30),         5,        3],
+    [repeat(1, 30),         7,        3],
+    [repeat(1, 30),        30,        5],
+    [repeat(1, 60),         5,        3],
+    [repeat(1, 60),         7,        3],
+];
+
+it(() => {
+    for (const [classCounts, drawCount, expected] of SLOT_SIZE_EXPECTATIONS) {
+        const actual = Hypergeometric.calculateSlotSizeInBits(classCounts, drawCount);
+
+        assert(
+            actual === expected,
+            "calculateSlotSizeInBits mismatch for " + JSON.stringify([classCounts, drawCount]) + ", expected " + expected + " got " + actual
+        )
+    }
+});
+
 const UNIQUE_DRAWS_EXPECTATIONS = [
     // classCounts, drawCount, expected
     [           [],         0,        1],
@@ -160,20 +192,20 @@ it(() => {
         const actual = Hypergeometric.uniqueDraws(classCounts, drawCount);
         console.log(classCounts, drawCount)
         assert(
-            actual === expected, 
+            actual === expected,
             "uniqueDraws mismatch for " + JSON.stringify([classCounts, drawCount]) + ", expected " + expected + " got " + actual
         )
-        
+
         if (classCounts.length >= 10) { continue }
-        
+
         const slowActual = uniqueDrawsSlow(classCounts, drawCount);
-        
+
         assert(
-            actual === slowActual, 
+            actual === slowActual,
             "uniqueDraws/uniqueDrawsSlow mismatch for " + JSON.stringify([classCounts, drawCount]) + ", expected " + slowActual + " got " + actual
         )
     }
-})
+});
 
 // test runner
 for (const test of allTests) {
