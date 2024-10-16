@@ -366,9 +366,12 @@ label {
     classEntriesListeners.push(listener);
   }
 
-  const renderClassEntriesChanges = () => {
+  const LISTENER_MODE_FULL = 0;
+  const LISTENER_MODE_QUICK = 1;
+
+  const renderClassEntriesChanges = (mode) => {
     for (listener of classEntriesListeners) {
-      listener();
+      listener(mode);
     }
   };
 
@@ -385,7 +388,7 @@ label {
     window.localStorage.setItem(CLASS_ENTRIES_KEYS[index], JSON.stringify(classEntries))
     window.localStorage.setItem(CLASS_INDEX_KEY, index);
 
-    renderClassEntriesChanges();
+    renderClassEntriesChanges(LISTENER_MODE_FULL);
   };
 
   const loadClassEntriesOrDefault = () => {
@@ -476,7 +479,7 @@ label {
 
         labelElement.value = previousLabel || classEntries[i].label;
         labelElement.addEventListener("input", (e) => {
-          renderClassEntriesChanges();
+          renderClassEntriesChanges(LISTENER_MODE_QUICK);
         });
         labelElement.addEventListener("change", (e) => {
           if (i < classEntries.length) {
@@ -618,7 +621,7 @@ label {
     inDeckDefaultInput.id = "in-deck-default-input";
     inDeckDefaultInput.value = POPULATION_DEFAULT;
     inDeckDefaultInput.addEventListener("change", () => {
-      resetClassControls();
+      resetClassControls(LISTENER_MODE_FULL);
     })
     inDeckDefaultWrapper.appendChild(inDeckDefaultInput);
 
@@ -670,8 +673,10 @@ label {
 
   const singleDrawCalculatorDefaults = appendClassControls(classCalcControls, "single-draw-default");
 
-  const resetClassControls = () => {
-    ClassDefaults.reset(singleDrawCalculatorDefaults);
+  const resetClassControls = (mode) => {
+    if (mode === LISTENER_MODE_FULL) {
+        ClassDefaults.reset(singleDrawCalculatorDefaults);
+    }
 
     let previousCurrentElements = classCurrentElements;
     classCurrentElements = [];
@@ -880,8 +885,12 @@ label {
 
     const output = document.createElement("output");
 
-    const resetUniqueDrawCalc = () => {
+    const resetUniqueDrawCalc = (mode) => {
       ClassDefaults.reset(classControls);
+
+      if (mode === LISTENER_MODE_QUICK) {
+        return
+      }
 
       output.textContent = "";
 
@@ -900,7 +909,7 @@ label {
     addClassEntriesListener(resetUniqueDrawCalc);
   })();
 
-  renderClassEntriesChanges();
+  renderClassEntriesChanges(LISTENER_MODE_FULL);
 </script>
 
 </html>
