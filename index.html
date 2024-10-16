@@ -825,31 +825,6 @@ label {
   //
 
   (() => {
-    // TODO? a calculator to assess how many unique draws of n cards there are, given different members of a class are considered identical, and order of draws doesn't matter
-    //  Huh, doesn't seem to be an easy to find formula for this, at least as I have phrased it
-    //  Upon more searchng and some reflection, calcualting this without actually doing the actual duplocaite checking seems like it requires the numbers of types of hands
-    //  in terms of numbers of duplicates (as in no duplicates, 2 the same, 3 the same, 2 the same of one as well as 2 the same of another, and so on), which is itself non-trivial
-    //  Then we need to iterate over those cases and calculate a subexpression for each of them. So not as surprising that there's not an easy to find way to calcaulte this.
-    //
-    //  Proposed Steps:
-    //    Add DEBUG_MODE flag ✔
-    //    Add controls for this calculation behind said flag, with placeholder function for calculation
-    //      Move class naming into classDefaultControlsWrapper controls ✔
-    //      extract classDefaultControlsWrapper setup into a reuseable function, with its own state ✔
-    //        Maybe it should load the classes from the same localstorage though? Might want to add selecting controls now?
-    //      use that to add a separate class editor for the unique draws calculator
-    //        So we can read the default out of the ClassDefaults instance. Bascially we can to pass a copy of the current class elements
-    //    Write the naive, slow, but clearly correct version of the calculation function and see if it's actually too slow for our use case
-    //      If it's fast enough, ship it and move on
-    //    Add a unit test file, copy the slow verison in there, write a test that checks the two copies are the same, on small but non-trivial cases
-    //    Change the live copy to be faster, using the method involving calculating the number of types of hands in terms of numbers of duplicates as described above
-    //    Expand tests as needed until we are convinced that the fast impl is correct
-    //    pull controls out from behind DEBUG_MODE flag
-
-    if (!DEBUG_MODE) {
-      return
-    }
-
     const uniqueDetails = appendDetails(root, "Unique Draws Calculator");
 
     const classControls = appendClassControls(
