@@ -422,7 +422,6 @@ label {
       return classDefaults.inDeckDefaultInput.value;
     },
     reset: (classDefaults) => {
-      const previousElements = classDefaults.elements;
       classDefaults.elements = [];
 
       classDefaults.classDefaultControlsWrapper.innerHTML = "";
@@ -436,20 +435,8 @@ label {
         const defaultInput = document.createElement("input");
         defaultInput.type = "number";
         defaultInput.id = defaultId;
-        let previousDefaultValue = parseInt(previousElements[i]?.defaultInput?.value);
 
-        if (isNaN(previousDefaultValue)) {
-          if (
-            // Previous values being blank the first time is expected
-            previousElements.length
-            // Checking for one past the last element is expected
-            && i > previousElements.length
-          ) {
-            console.error("Bad previous class default value at index " + i + ": " + value);
-          }
-          previousDefaultValue = 0;
-        }
-        defaultInput.value = previousDefaultValue || classEntries[i].amount;
+        defaultInput.value = classEntries[i].amount;
 
         defaultWrapper.appendChild(defaultInput);
         defaultInput.addEventListener("change", (e) => {
@@ -464,20 +451,7 @@ label {
         const labelElement = document.createElement("input");
         defaultWrapper.appendChild(labelElement);
 
-        const previousLabel = previousElements[i]?.label?.value;
-
-        if (typeof previousLabel !== "string") {
-          if (
-            // Previous values being blank the first time is expected
-            previousElements.length
-            // Checking for one past the last element is expected
-            && i > previousElements.length
-          ) {
-            console.error("Bad previous class default label at index " + i + ": " + previousLabel);
-          }
-        }
-
-        labelElement.value = previousLabel || classEntries[i].label;
+        labelElement.value = classEntries[i].label;
         labelElement.addEventListener("input", (e) => {
           renderClassEntriesChanges(LISTENER_MODE_QUICK);
         });
