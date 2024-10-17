@@ -452,9 +452,6 @@ label {
         defaultWrapper.appendChild(labelElement);
 
         labelElement.value = classEntries[i].label;
-        labelElement.addEventListener("input", (e) => {
-          renderClassEntriesChanges(LISTENER_MODE_QUICK);
-        });
         labelElement.addEventListener("change", (e) => {
           if (i < classEntries.length) {
             classEntries[i].label = labelElement.value;
