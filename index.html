@@ -831,6 +831,23 @@ label {
 
     const output = document.createElement("output");
 
+    const DRAW_COUNT_DEFAULT = 7;
+
+    const drawCountWrapper = document.createElement("div");
+    uniqueDetails.appendChild(drawCountWrapper);
+
+    const drawCountInput = document.createElement("input");
+    drawCountInput.type = "number";
+    drawCountInput.id = "unique-draw-draw-count";
+    drawCountInput.value = DRAW_COUNT_DEFAULT;
+    drawCountWrapper.appendChild(drawCountInput);
+
+    const drawCountLabel = document.createElement("label");
+    drawCountLabel.htmlFor = "unique-draw-draw-count";
+    drawCountLabel.innerHTML = "Draw Count";
+    drawCountWrapper.appendChild(drawCountLabel);
+
+
     const resetUniqueDrawCalc = (mode) => {
       ClassDefaults.reset(classControls);
 
@@ -840,19 +857,19 @@ label {
 
       output.textContent = "";
 
-      // TODO add UI to set this
-      const drawCount = 7;
+      const drawCount = drawCountInput.value;
 
       const uniqueDraws = Hypergeometric.uniqueDraws(
         ClassDefaults.getClassCounts(classControls),
         drawCount
       );
-      output.textContent = `There are ${uniqueDraws} unique draw${uniqueDraws === 1? "" : "s"} of ${drawCount} card${drawCount === 1? "" : "s"} from this deck`;
+      output.textContent = `There ${uniqueDraws === 1? "is" : "are"} ${uniqueDraws} unique draw${uniqueDraws === 1? "" : "s"} of ${drawCount} card${drawCount === 1? "" : "s"} from this deck`;
 
       uniqueDetails.appendChild(output);
     }
 
     addClassEntriesListener(resetUniqueDrawCalc);
+    drawCountInput.addEventListener("change", resetUniqueDrawCalc);
   })();
 
   renderClassEntriesChanges(LISTENER_MODE_FULL);
