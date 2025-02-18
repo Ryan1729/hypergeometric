@@ -686,7 +686,7 @@ label {
         inDeckInput.value -= 1;
 
         if (parseInt(input.value, 10) >= 0 && parseInt(inDeckInput.value, 10) >= 0) {
-          const label = labelElement.value;
+          const label = classLabelElement.value;
           if (drawnSinceReset[label]) {
             drawnSinceReset[label] += 1;
           } else {
