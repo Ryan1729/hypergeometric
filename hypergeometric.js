@@ -35,6 +35,28 @@ var Hypergeometric = (function () {
         return Number(PMF_SCALE_UP * (choose(K, k) * choose(N - K, n - k)) / choose(N, n)) / PMF_SCALE_DOWN;
     };
 
+    /*
+     * Sum of Probability Mass Function from n down to k successes.
+     * That is, the total propabilty of getting at least that many
+     * successes.
+     * N is the population size,
+     * K is the number of success states in the population,
+     * n is the number of draws (i.e. quantity drawn in each trial),
+     * k is the number of observed successes,
+     */
+    /** @type {(N: Integer, K: Integer, n: Integer, k: Integer) => number} */
+    const pmfAtLeast = (N, K, n, k) => {
+        if (k > n) { return 0 }
+
+        let sum = 0;
+        for (let currentLittleK = k; currentLittleK <= n; currentLittleK += 1) {
+            // Yes tis is summing many potentially small doubles.
+            // Famous last words, but we'll probably be fine.
+            sum += pmf(N, K, n, currentLittleK);
+        }
+        return sum;
+    };
+
     // https://stackoverflow.com/a/6422061
     function multiply_uint32(a, b) {
         var ah = (a >> 16) & 0xffff, al = a & 0xffff;
@@ -141,6 +163,7 @@ var Hypergeometric = (function () {
         choose,
         factorial,
         pmf,
+        pmfAtLeast,
         uniqueDraws,
         calculateSlotSizeInBits
     };

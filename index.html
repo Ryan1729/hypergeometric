@@ -818,6 +818,140 @@ label {
   addClassEntriesListener(resetClassControls);
 
   //
+  // Setup Binary Class Draw Calculator
+  //
+  (() => {
+    const binaryClassDetails = appendDetails(root, "Binary Class Draw Calculator");
+
+    const output = document.createElement("output");
+
+    // Want to be able to put in an approximate value for the amount available in the population of a known size
+
+    const POPULATION_COUNT_DEFAULT = 53;
+    const SUCCESS_COUNT_DEFAULT = 22;
+    const DRAW_COUNT_DEFAULT = 2;
+    const MODE_COUNT_DEFAULT = 1;
+
+    const populationCountWrapper = document.createElement("div");
+    binaryClassDetails.appendChild(populationCountWrapper);
+
+    const populationCountInput = document.createElement("input");
+    populationCountInput.type = "number";
+    populationCountInput.id = "binary-class-population-count";
+    populationCountInput.value = POPULATION_COUNT_DEFAULT;
+    populationCountWrapper.appendChild(populationCountInput);
+
+    const populationCountLabel = document.createElement("label");
+    populationCountLabel.htmlFor = "binary-class-population-count";
+    populationCountLabel.innerHTML = "Population Count";
+    populationCountWrapper.appendChild(populationCountLabel);
+
+    const successesCountWrapper = document.createElement("div");
+    binaryClassDetails.appendChild(successesCountWrapper);
+
+    const successesCountInput = document.createElement("input");
+    successesCountInput.type = "number";
+    successesCountInput.id = "binary-class-successes-count";
+    successesCountInput.value = SUCCESS_COUNT_DEFAULT;
+    successesCountWrapper.appendChild(successesCountInput);
+
+    const successesCountLabel = document.createElement("label");
+    successesCountLabel.htmlFor = "binary-class-successes-count";
+    successesCountLabel.innerHTML = "Successes in Population";
+    successesCountWrapper.appendChild(successesCountLabel);
+
+    const drawCountWrapper = document.createElement("div");
+    binaryClassDetails.appendChild(drawCountWrapper);
+
+    const drawCountInput = document.createElement("input");
+    drawCountInput.type = "number";
+    drawCountInput.id = "binary-class-draw-count";
+    drawCountInput.value = DRAW_COUNT_DEFAULT;
+    drawCountWrapper.appendChild(drawCountInput);
+
+    const drawCountLabel = document.createElement("label");
+    drawCountLabel.htmlFor = "binary-class-draw-count";
+    drawCountLabel.innerHTML = "Draw Count";
+    drawCountWrapper.appendChild(drawCountLabel);
+
+    const modeWrapper = document.createElement("div");
+    binaryClassDetails.appendChild(modeWrapper);
+
+    const MODES = ["At Least", "Exact"];
+
+    const modeSelect = document.createElement("select");
+    for (let i = 0; i < MODES.length; i += 1) {
+      const option = document.createElement("option")
+      option.value = MODES[i];
+      option.textContent = MODES[i];
+      option.selected = i === 0;
+      modeSelect.appendChild(option);
+    }
+    modeWrapper.appendChild(modeSelect);
+
+    const modeCountInput = document.createElement("input");
+    modeCountInput.type = "number";
+    modeCountInput.id = "binary-class-mode-count";
+    modeCountInput.value = MODE_COUNT_DEFAULT;
+    modeWrapper.appendChild(modeCountInput);
+
+    binaryClassDetails.appendChild(modeWrapper)
+
+    const resetBinaryClassCalc = (mode) => {
+      output.textContent = "";
+
+      const popMax = parseInt(populationCountInput.value, 10);
+
+      const drawCount = parseInt(drawCountInput.value, 10);
+
+      const modeCount = parseInt(modeCountInput.value, 10);
+
+      const centerSuccesses = parseInt(successesCountInput.value, 10);
+
+      const surroundingSuccesses = [];
+      const EXTRA_ON_EACH_SIDE = 1;
+      for (let current = centerSuccesses - EXTRA_ON_EACH_SIDE; current <= (centerSuccesses + EXTRA_ON_EACH_SIDE); current += 1) {
+        if (current > 0) {
+          surroundingSuccesses.push(current);
+        }
+      }
+
+      let pmfFunc;
+      switch (modeSelect.value || MODES[0]) {
+        default:
+        case "At Least":
+          pmfFunc = Hypergeometric.pmfAtLeast;
+        break
+        case "Exact":
+          pmfFunc = Hypergeometric.pmf;
+        break
+      }
+
+      for (successesInPop of surroundingSuccesses) {
+        const probability = pmfFunc(popMax, successesInPop, drawCount, modeCount);
+
+        const rowWrapper = document.createElement("div");
+
+        const row = document.createElement(successesInPop == centerSuccesses ? "strong" : "span");
+        row.textContent = `${successesInPop}/${popMax}: ${formatPercent(probability)}%\n`;
+
+        rowWrapper.appendChild(row);
+        output.appendChild(rowWrapper);
+      }
+
+      binaryClassDetails.appendChild(output);
+    }
+
+    populationCountInput.addEventListener("change", resetBinaryClassCalc);
+    successesCountInput.addEventListener("change", resetBinaryClassCalc);
+    drawCountInput.addEventListener("change", resetBinaryClassCalc);
+    modeSelect.addEventListener("change", resetBinaryClassCalc);
+    modeCountInput.addEventListener("change", resetBinaryClassCalc);
+
+    resetBinaryClassCalc();
+  })();
+
+  //
   // Setup Unique Draws Calculator
   //
 
