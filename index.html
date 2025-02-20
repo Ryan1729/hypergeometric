@@ -895,9 +895,59 @@ label {
     modeCountInput.value = MODE_COUNT_DEFAULT;
     modeWrapper.appendChild(modeCountInput);
 
-    binaryClassDetails.appendChild(modeWrapper)
+    binaryClassDetails.appendChild(modeWrapper);
 
-    const resetBinaryClassCalc = (mode) => {
+    const drawWrapper = document.createElement("div");
+    binaryClassDetails.appendChild(drawWrapper);
+
+    const drewSuccessButton = document.createElement("button");
+    drewSuccessButton.textContent = "Drew Success";
+    drawWrapper.appendChild(drewSuccessButton);
+
+    const drewFailureButton = document.createElement("button");
+    drewFailureButton.textContent = "Drew Failure";
+    drawWrapper.appendChild(drewFailureButton);
+
+    const decDrawCountCheckbox = document.createElement("input");
+    decDrawCountCheckbox.id = "binary-class-dec-draw-count-checkbox";
+    decDrawCountCheckbox.type = "checkbox";
+    decDrawCountCheckbox.checked = true;
+    drawWrapper.appendChild(decDrawCountCheckbox);
+
+    const decDrawCountLabel = document.createElement("label");
+    decDrawCountLabel.htmlFor = "binary-class-dec-draw-count-checkbox";
+    decDrawCountLabel.innerHTML = "Decrement Draw Count";
+    drawWrapper.appendChild(decDrawCountLabel);
+
+    const decInput = (input) => {
+      const n = parseInt(input.value, 10);
+
+      if(!isNaN(n) && n > 0) {
+        input.value = n - 1;
+      }
+    }
+
+    drewSuccessButton.addEventListener("click", () => {
+      decInput(successesCountInput);
+      decInput(populationCountInput);
+
+      if (decDrawCountCheckbox.checked) {
+        decInput(drawCountInput);
+      }
+
+      resetBinaryClassCalc();
+    });
+    drewFailureButton.addEventListener("click", () => {
+      decInput(populationCountInput);
+
+      if (decDrawCountCheckbox.checked) {
+        decInput(drawCountInput);
+      }
+
+      resetBinaryClassCalc();
+    });
+
+    const resetBinaryClassCalc = () => {
       output.textContent = "";
 
       const popMax = parseInt(populationCountInput.value, 10);
