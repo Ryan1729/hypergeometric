@@ -860,6 +860,10 @@ label {
     successesCountLabel.innerHTML = "Successes in Population";
     successesCountWrapper.appendChild(successesCountLabel);
 
+    const invertSuccessesButton = document.createElement("button");
+    invertSuccessesButton.textContent = "Invert";
+    successesCountWrapper.appendChild(invertSuccessesButton);
+
     const drawCountWrapper = document.createElement("div");
     binaryClassDetails.appendChild(drawCountWrapper);
 
@@ -918,6 +922,22 @@ label {
     decDrawCountLabel.htmlFor = "binary-class-dec-draw-count-checkbox";
     decDrawCountLabel.innerHTML = "Decrement Draw Count";
     drawWrapper.appendChild(decDrawCountLabel);
+
+    invertSuccessesButton.addEventListener("click", () => {
+      const successes = parseInt(successesCountInput.value, 10);
+      const population = parseInt(populationCountInput.value, 10);
+
+      if(
+        !isNaN(successes)
+        && successes > 0
+        && !isNaN(population)
+        && population > 0
+      ) {
+        successesCountInput.value = population - successes;
+      }
+
+      resetBinaryClassCalc();
+    });
 
     const decInput = (input) => {
       const n = parseInt(input.value, 10);
